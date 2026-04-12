@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 import requests
 from datetime import datetime
+from sqlalchemy import create_engine
 
 def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
     """Validate the date format
@@ -56,7 +57,8 @@ def data_extractor(ticker:str, start_date:str,end_date:str) -> pd.DataFrame:
         data = yf.download(
             tickers=ticker,
             start=start_date,
-            end=end_date
+            end=end_date,
+            auto_adjust=False
         )
     except requests.exceptions.ConnectionError:
         print("Error: No internet connection or the server does not respond")
@@ -71,5 +73,19 @@ def data_extractor(ticker:str, start_date:str,end_date:str) -> pd.DataFrame:
         raise ValueError(f"data from {start_date} to {end_date} not found using {ticker} ticker")
     return data
 
+def data_to_sql(df:pd.DataFrame,table_name:str,ticker:str) -> pd.DataFrame:
+    engine = create_engine("postgresql+psycopg2://postgres:Herramienta1@localhost:5432/quantitative_risk")
+    df = df.reset_index()
+    df = df.droplevel('Ticker',axis=1)
+    df = df.rename(columns={'Date': 'market_date','Close': 'close_price','High': 'high_price','Low': 'low_price','Open': 'open_price','Volume': 'volume','Adj Close': 'adj_close'})
+    df.insert(1, 'ticker', ticker)
+    df = df.to_sql(name=table_name, con=engine, if_exists='append',index=False)
+    return df
+
 if __name__ == "__main__":
-    print(data_extractor("GOOGL","2020-01-01","2024-01-01"))
+    ticker = "GOOGL"
+    table_name = 'historical_market_data'
+    df = data_extractor(ticker,"2020-01-01","2024-01-01")
+    data_to_sql(df,table_name,ticker)
+
+
