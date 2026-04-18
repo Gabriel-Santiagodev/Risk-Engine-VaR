@@ -3,10 +3,10 @@ import pandas as pd
 import requests
 import os
 import json
-from dotenv import load_dotenv
 from datetime import datetime
-from sqlalchemy import create_engine
 from typing import Any
+from db_config import get_db_engine
+from sqlalchemy.engine import Engine
 
 def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
     """Validate the date format
@@ -34,7 +34,7 @@ def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
     return start_date, end_date
     
 def data_extractor(tickers:list[str], start_date:str,end_date:str) -> pd.DataFrame:
-    """Download a dataframe 
+    """Extract a raw dataframe  from yahoo finance
     
     This function downloads the historical market using for a given ticker, start date and end date.
     All parameters must be strings.
@@ -92,38 +92,61 @@ def data_extractor(tickers:list[str], start_date:str,end_date:str) -> pd.DataFra
         raise ValueError(f"data from {start_date} to {end_date} not found using {tickers} tickers")
     return data
 
-def data_to_sql(df:pd.DataFrame,table_name:str) -> None:
-    """Connect with PostgreSQL
+def data_transformator(df:pd.DataFrame) -> pd.DataFrame:
+    """Transform raw dataframe 
 
-    This function connects data with PostgreSQL using, cleaning and transforming the dataframe 
-    given by the data_extractor function.
+    This functions is in charge to transform the columns name, add ticker columns and reset indexes.
 
     Args:
-        df (pd.DataFrame): Historical market data.
-        table_name (str): Name of the selected table to connect it with PostgreSQL.
+        df (pd.DataFrame): Raw historical market data dataframe downloaded given by data_extractor function.
 
     Returns:
-        None: Returns nothing.
+        pd.DataFrame: Historical market dataframe transformed.
 
     Raises:
-        sqlalchemy.exc.OperationalError: If the database is turned off or the password/host is incorrect.
-        sqlalchemy.exc.IntegrityError: If there is an attempt to insert duplicate rows that violate the primary key constraint (e.g., same ticker and date).
-
+        None: This function does not have raises.
+    
     Examples:
-        >>>data_to_sql(df,table_name)
-        None
-
+        >>>data_transformator(df)
+        Price market_date ticker   adj_close  close_price  high_price   low_price  open_price     volume
+        0      2020-01-02   AAPL   72.400513    75.087502   75.150002   73.797501   74.059998  135480400
+        1      2020-01-02  GOOGL   67.873024    68.433998   68.433998   67.324501   67.420502   27278000
+        2      2020-01-02   MSFT  152.158386   160.619995  160.729996  158.330002  158.779999   22622100
+        3      2020-01-03   AAPL   71.696648    74.357498   75.144997   74.125000   74.287498  146322800
+        4      2020-01-03  GOOGL   67.517960    68.075996   68.687500   67.365997   67.400002   23408000
+        ...           ...    ...         ...          ...         ...         ...         ...        ...
+        3013   2023-12-28  GOOGL  139.080505   140.229996  141.139999  139.750000  140.779999   16045700
+        3014   2023-12-28   MSFT  368.924835   375.279999  376.459991  374.160004  375.369995   14327000
+        3015   2023-12-29   AAPL  190.550461   192.529999  194.399994  191.729996  193.899994   42672100
+        3016   2023-12-29  GOOGL  138.544937   139.690002  140.360001  138.779999  139.630005   18733000
+        3017   2023-12-29   MSFT  369.671906   376.040009  377.160004  373.480011  376.000000   18730800
+        
     """
-    load_dotenv()
-    db_user = os.getenv("DB_USER")
-    db_password = os.getenv("DB_PASSWORD")
-    db_host = os.getenv("DB_HOST")
-    db_port = os.getenv("DB_PORT")
-    db_name = os.getenv("DB_NAME")
-    engine = create_engine(f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}")
     df = df.stack()
     df = df.reset_index()
     df = df.rename(columns={'Date': 'market_date','Close': 'close_price','High': 'high_price','Low': 'low_price','Open': 'open_price','Volume': 'volume','Adj Close': 'adj_close','Ticker':'ticker'})
+    return df
+
+def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
+    """Load historical market dataframe transformed to PostgreSQL.
+
+    This function is in charge to load the historical market dataframe transformed given by data_transformator function to postgreSQL.
+
+    Args:
+        df(pd.DataFrame): Historical market dataframe transformed.
+        table_name(str): PostgreSQL table's name.
+        engine(Engine): Connection with PostgreSQL.
+
+    Returns:
+        None: This function returns nothing.
+
+    Raises:
+        psycopg2.errors.UniqueViolation: If there is a duplicate primary key such as market_date or ticker.
+
+    Examples:
+        >>>data_to_sql(df,'historical_market_data',engine)
+
+    """
     df.to_sql(name=table_name, con=engine, if_exists='append',index=False)
 
 def json_config() -> dict[str, Any]:
@@ -142,9 +165,14 @@ def json_config() -> dict[str, Any]:
         RuntimeError: If theres an error trying to read the json file.
 
     Examples:
+        >>>data = json_config()
+        >>>tickers = data["tickers"]
+        >>>table_name = data["table_name"]
+        >>>start_date = data["start_date"]
+        >>>end_date = data["end_date"]
     
     """
-    route = "config/config.json"
+    route = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "config.json")
     if not os.path.exists(route):
         raise FileNotFoundError(f"Route {route} or file config.json do not exist.")
     try:
@@ -166,7 +194,8 @@ def main():
     start_date = data["start_date"]
     end_date = data["end_date"]
     df = data_extractor(tickers,start_date,end_date)
-    data_to_sql(df,table_name)
+    df = data_transformator(df)
+    data_to_sql(df,table_name,get_db_engine())
     
 if __name__ == "__main__":
     main()
