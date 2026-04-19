@@ -1,11 +1,9 @@
 import yfinance as yf
 import pandas as pd
 import requests
-import os
-import json
 from datetime import datetime
-from typing import Any
 from db_config import get_db_engine
+from js_config import get_js_config
 from sqlalchemy.engine import Engine
 
 def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
@@ -149,46 +147,11 @@ def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
     """
     df.to_sql(name=table_name, con=engine, if_exists='append',index=False)
 
-def json_config() -> dict[str, Any]:
-    """Download data from json file
-
-    This functions downloads tickers, table_name, start_date and end_date data from config.json file
-
-    Args:
-        None: This funcionts does not have arguments.
-
-    Returns:
-        dict[str, any]: Dictionary with tickers list, table_name, start_date and end_date data.
-
-    Raises:
-        ValueError: If there is an error decoding the json file.
-        RuntimeError: If theres an error trying to read the json file.
-
-    Examples:
-        >>>data = json_config()
-        >>>tickers = data["tickers"]
-        >>>table_name = data["table_name"]
-        >>>start_date = data["start_date"]
-        >>>end_date = data["end_date"]
-    
-    """
-    route = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "config.json")
-    if not os.path.exists(route):
-        raise FileNotFoundError(f"Route {route} or file config.json do not exist.")
-    try:
-        with open(route,"r",encoding="utf-8") as f:
-            data = json.load(f)
-            return data
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Error decoding json file {e}")
-    except Exception as e:
-        raise RuntimeError(f"Error trying to read json file {e}")
-
 def main():
     """
     Execute the ETL pipeline. Extracts historical data for a specific ticker and loads it into the local PostgreSQL database.
     """
-    data = json_config()
+    data = get_js_config()
     tickers = data["tickers"]
     table_name = data["table_name"]
     start_date = data["start_date"]
