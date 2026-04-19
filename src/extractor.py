@@ -5,6 +5,10 @@ from datetime import datetime
 from db_config import get_db_engine
 from js_config import get_js_config
 from sqlalchemy.engine import Engine
+from js_type import JsonConfig
+
+def tickers_list(data:JsonConfig) -> list[str]:
+    return list(data["weight_tickers"].keys()) 
 
 def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
     """Validate the date format
@@ -152,7 +156,7 @@ def main():
     Execute the ETL pipeline. Extracts historical data for a specific ticker and loads it into the local PostgreSQL database.
     """
     data = get_js_config()
-    tickers = data["tickers"]
+    tickers = tickers_list(data)
     table_name = data["table_name"]
     start_date = data["start_date"]
     end_date = data["end_date"]

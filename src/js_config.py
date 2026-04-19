@@ -3,7 +3,7 @@ import json
 from typing import Any
 from typing import Union
 
-def get_js_config() -> dict[Union[str, Any]]:
+def get_js_config() -> dict[str, Any]:
     """Download data from json file
 
     This functions downloads tickers, table_name, start_date,
