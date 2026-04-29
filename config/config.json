@@ -1,0 +1,8 @@
+{
+    "weight_tickers": {"GOOGL":0.5, "AAPL": 0.3, "MSFT": 0.2},
+    "table_name": "historical_market_data",
+    "start_date": "2020-01-01",
+    "end_date": "2024-01-01",
+    "portfolio_value": 100000,
+    "confidence_level": 0.99
+}
