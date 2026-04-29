@@ -8,16 +8,36 @@ from sqlalchemy.engine import Engine
 from js_type import JsonConfig
 
 def tickers_list(data:JsonConfig) -> list[str]:
+    """Extract the list of tickers from the configuration data (json.config)
+
+    This function accesses the 'weight_tickers' dictionary inside the JSON configuration
+    and extracts its keys to generate a list of the stock tickers to be analyzed.
+
+    Args:
+        data (JsonConfig): Json dictionary parameters.
+
+    Returns:
+        list[str]: A list containing the stock tickers (e.g., ['AAPL', 'GOOGL', 'MSFT']).
+
+    Raises:
+        KeyError: If the 'weight_tickers' key does not exist in the configuration file.
+        AttributeError: If the values associated with 'weight_tickers' is not a dictionary.
+
+    Examples:
+        >>> tickers_list(data)
+        ['GOOGL', 'AAPL', 'MSFT']
+
+    """
     return list(data["weight_tickers"].keys()) 
 
 def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
-    """Validate the date format
+    """Validate the date format.
     
     This function validates if the date format is correct. All parameters must be strings.
 
     Args:
-        start_date (str): First date to be validated. Must be in the next format: "YYYY-MM-DD".
-        end_date (str): End date to be validated. Must be in the next format: "YYYY-MM-DD".
+        start_date (str): First date to be validated. Must be in the following format: "YYYY-MM-DD".
+        end_date (str): End date to be validated. Must be in the following format: "YYYY-MM-DD".
 
     Returns:
         tuple[str, str]: Both validated dates.
@@ -36,15 +56,15 @@ def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
     return start_date, end_date
     
 def data_extractor(tickers:list[str], start_date:str,end_date:str) -> pd.DataFrame:
-    """Extract a raw dataframe  from yahoo finance
+    """Extract a raw dataframe  from yahoo finance.
     
     This function downloads the historical market using for a given ticker, start date and end date.
     All parameters must be strings.
 
     Args:
         tickers (list[str]): Companies's ticker. (e.g, "AAPL", "MSFT").
-        start_date (str): Start date of the historical market. Must be in the next format: "YYYY-MM-DD".
-        end_date (str): End date of the historical market. Must be in the next format: "YYYY-MM-DD".
+        start_date (str): Start date of the historical market. Must be in the following format: "YYYY-MM-DD".
+        end_date (str): End date of the historical market. Must be in the following format: "YYYY-MM-DD".
 
     Returns:
         pd.DataFrame: Historical market data.
@@ -94,8 +114,8 @@ def data_extractor(tickers:list[str], start_date:str,end_date:str) -> pd.DataFra
         raise ValueError(f"data from {start_date} to {end_date} not found using {tickers} tickers")
     return data
 
-def data_transformator(df:pd.DataFrame) -> pd.DataFrame:
-    """Transform raw dataframe 
+def transform_data(df:pd.DataFrame) -> pd.DataFrame:
+    """Transform raw dataframe.
 
     This functions is in charge to transform the columns name, add ticker columns and reset indexes.
 
@@ -109,7 +129,7 @@ def data_transformator(df:pd.DataFrame) -> pd.DataFrame:
         None: This function does not have raises.
     
     Examples:
-        >>>data_transformator(df)
+        >>>transform_data(df)
         Price market_date ticker   adj_close  close_price  high_price   low_price  open_price     volume
         0      2020-01-02   AAPL   72.400513    75.087502   75.150002   73.797501   74.059998  135480400
         1      2020-01-02  GOOGL   67.873024    68.433998   68.433998   67.324501   67.420502   27278000
@@ -132,7 +152,7 @@ def data_transformator(df:pd.DataFrame) -> pd.DataFrame:
 def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
     """Load historical market dataframe transformed to PostgreSQL.
 
-    This function is in charge to load the historical market dataframe transformed given by data_transformator function to postgreSQL.
+    This function is in charge to load the historical market dataframe transformed given by transform_data function to postgreSQL.
 
     Args:
         df(pd.DataFrame): Historical market dataframe transformed.
@@ -153,7 +173,7 @@ def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
 
 def main():
     """
-    Execute the ETL pipeline. Extracts historical data for a specific ticker and loads it into the local PostgreSQL database.
+    Executes the ETL pipeline. Extracts historical data for a specific ticker and loads it to the local PostgreSQL database.
     """
     data = get_js_config()
     tickers = tickers_list(data)
@@ -161,7 +181,7 @@ def main():
     start_date = data["start_date"]
     end_date = data["end_date"]
     df = data_extractor(tickers,start_date,end_date)
-    df = data_transformator(df)
+    df = transform_data(df)
     data_to_sql(df,table_name,get_db_engine())
     
 if __name__ == "__main__":
