@@ -214,6 +214,41 @@ def vector_to_array(weights_vector:list[Union[int,float]]) -> NDArray:
     """
     return np.array(weights_vector)
 
+def calculate_portfolio_percentages_changes(percentage_change_matrix:pd.DataFrame, weight_array:NDArray) -> pd.Series:
+    """Calculate the daily portfolio percentage changes.
+
+    This function is in charge to calculate the daily portfolio percentage changes multiplying the
+    daily percentage change of each ticker column times their weight.
+
+    Args: 
+        percentage_change_matrix (pd.DataFrame): Pivoted historical market dataframe with percentage changes.
+        weights_array (NDArray): Weights Array.
+
+    Returns:
+        pd.Series: Daily portfolio percentage changes.
+
+    Raises:
+        ValueError: If the dimension of one of the matrices are incompatible to multiply.
+
+    Examples:
+        >>>calculate_portfolio_percentages_changes(percentage_change_matrix,weights_array)
+        market_date
+        2020-01-03   -0.008022
+        2020-01-06    0.016234
+        2020-01-07   -0.004200
+        2020-01-08    0.011571
+        2020-01-09    0.014120
+                        ...   
+        2023-12-22    0.002703
+        2023-12-26   -0.000703
+        2023-12-27   -0.004223
+        2023-12-28    0.000816
+        2023-12-29   -0.003148
+        Length: 1005, dtype: float64
+
+    """
+    return percentage_change_matrix @ weight_array
+
 def vector_validation(weights_vector:list[Union[int,float]]) -> None:
     """Validate weights vector values.
 
@@ -237,7 +272,7 @@ def vector_validation(weights_vector:list[Union[int,float]]) -> None:
         raise ValueError(f"Portfolio size error {weights_vector}. Must be equal or near to 1.0")
 
 def portfolio_variance(var_cov_matrix:pd.DataFrame,weights_array:NDArray) -> float:
-    """Calculate portfolio variance.
+    r"""Calculate portfolio variance.
 
     This function calculates the portfolio variance using the formula: w^T \cdot \Sigma \cdot w.
 
@@ -259,7 +294,7 @@ def portfolio_variance(var_cov_matrix:pd.DataFrame,weights_array:NDArray) -> flo
     return weights_array @ var_cov_matrix @ weights_array
 
 def portfolio_volatility(portfolio_var:float) -> float:
-    """Calculate portfolio volatility.
+    r"""Calculate portfolio volatility.
 
     This function calculates portfolio volatility value using the next formula: \sigma_p = \sqrt{\sigma_p^2}.
 
@@ -370,7 +405,7 @@ def z_score_calculator(confidence_level:Union[int, float]) -> float:
     return norm.ppf(1-confidence_level)
 
 def parametric_var_calculator(z_score:float,portfolio_mean:float,portfolio_vol:float) -> float:
-    """Calculate Percentage Value at Risk value.
+    r"""Calculate Percentage Value at Risk value.
 
     This function calculates through VaR formula (x = \mu + (Z \cdot \sigma_p)) the percentage VaR value.
 
@@ -436,7 +471,7 @@ def var_money_calculator(var_value:float,portfolio_value:Union[float,int]) -> fl
     """
     return var_value * portfolio_value * -1
 
-def main():
+def run_engine():
     """
     Executes the quantitative risk pipeline. It extracts historical market data from
     PostgreSQL, computes the portfolio's variance-covariance matrix, and calculates
@@ -451,6 +486,7 @@ def main():
     percentage_change_matrix = calculate_percentage_change(portfolio_matrix)
     var_cov_matrix = variance_covariance_matrix(percentage_change_matrix)
     weights_array = vector_to_array(weights_vector)
+    portfolio_percentages_changes = calculate_portfolio_percentages_changes(percentage_change_matrix,weights_array)
     portfolio_var = portfolio_variance(var_cov_matrix,weights_array)
     portfolio_vol = portfolio_volatility(portfolio_var)
     percentage_change_means = percentage_change_matrix_means(percentage_change_matrix)
@@ -460,8 +496,21 @@ def main():
     var_value = parametric_var_calculator(z_score,portfolio_mean,portfolio_vol)
     portfolio_value = portfolio_value_extraction(data)
     var_money = var_money_calculator(var_value,portfolio_value)
-    print(f"For a portfolio valued at ${portfolio_value}, the one-day parametric Value at Risk at a {confidence_level} confidence level is ${var_money:.4f}")
+    return {
+        "portfolio_percentages_changes": portfolio_percentages_changes,
+        "var_value": var_value,
+        "var_money": var_money,
+        "portfolio_value": portfolio_value,
+        "confidence_level": confidence_level,
+        "portfolio_vol": portfolio_vol,
+        "portfolio_mean": portfolio_mean
+    }
 
 if __name__ == "__main__":
-    main() 
+    quant_engine_dictionary = run_engine() 
+    print("Quant engine has successfully finished")
+    print("================Results================")
+    for key, value in quant_engine_dictionary.items():
+        print(f"{key}:\n{value}\n")
+
 
