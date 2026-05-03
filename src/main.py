@@ -1,4 +1,4 @@
-from visualizer import plot_histogram
+from visualizer import plot_return_density_with_var
 from quant_engine import run_quant_engine
 from extractor import run_etl_pipeline
 from db_config import get_db_engine
@@ -8,8 +8,8 @@ def execute_dashboard() -> None:
     """Execute the visualization dashboard.
 
     This function orchestrates the quantitative analysis process. It calls the quant
-    engine to retrieve the portfolio's percentage changes and passes them to the
-    visualizer to render the histogram.
+    engine to retrieve the values from its dictionary and passes them to the visualizer 
+    to render the histogram.
 
     Args:
         None: This function does not have arguments.
@@ -26,7 +26,11 @@ def execute_dashboard() -> None:
     run_etl_pipeline(data,engine)
     quant_engine_dictionary = run_quant_engine(data,engine)
     portfolio_percentages_changes = quant_engine_dictionary["portfolio_percentages_changes"]
-    plot_histogram(portfolio_percentages_changes)
+    portfolio_mean = quant_engine_dictionary["portfolio_mean"]
+    portfolio_vol = quant_engine_dictionary["portfolio_vol"]
+    var_value = quant_engine_dictionary["var_value"]
+    confidence_level = quant_engine_dictionary["confidence_level"]
+    plot_return_density_with_var(portfolio_percentages_changes, portfolio_mean, portfolio_vol, var_value, confidence_level)
 
 def main() -> None:
     """Entry point for the dashboard application.

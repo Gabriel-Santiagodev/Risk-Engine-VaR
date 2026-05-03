@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from js_type import JsonConfig
 from typing import Any
 
-def sql_validation(df:pd.DataFrame) -> None:
+def sql_validation(df: pd.DataFrame) -> None:
     """Validate the historical market dataframe information.
 
     This functions validates if the historical market dataframe is empty or not.
@@ -28,7 +28,7 @@ def sql_validation(df:pd.DataFrame) -> None:
     if df.empty:
         raise ValueError("Dataframe selected is empty.")
 
-def load_raw_dataframe(table_name:str,engine:Engine) -> pd.DataFrame:
+def load_raw_dataframe(table_name: str, engine: Engine) -> pd.DataFrame:
     """Load raw data frame to make a SQL query.
 
     This function is in charge to load raw historical market data to select through a SQL query the market_date, ticker and adj_close columns.
@@ -69,7 +69,7 @@ def load_raw_dataframe(table_name:str,engine:Engine) -> pd.DataFrame:
     sql_validation(df)
     return df
 
-def build_portfolio_matrix(df:pd.DataFrame) -> pd.DataFrame:
+def build_portfolio_matrix(df: pd.DataFrame) -> pd.DataFrame:
     """Pivot the historical market dataframe.
 
     This functions pivots the historical market dataframe changing from long format to wide format.
@@ -108,7 +108,7 @@ def build_portfolio_matrix(df:pd.DataFrame) -> pd.DataFrame:
     )
     return portfolio_matrix.ffill()
 
-def calculate_percentage_change(portfolio_matrix:pd.DataFrame) -> pd.DataFrame:
+def calculate_percentage_change(portfolio_matrix: pd.DataFrame) -> pd.DataFrame:
     """Calculate the percentage change in each column.
 
     This function calculates the percentage change price in each ticker column dropping NaN values.
@@ -141,7 +141,7 @@ def calculate_percentage_change(portfolio_matrix:pd.DataFrame) -> pd.DataFrame:
     """
     return portfolio_matrix.pct_change().dropna()
 
-def variance_covariance_matrix(percentage_change_matrix:pd.DataFrame) -> pd.DataFrame:
+def variance_covariance_matrix(percentage_change_matrix: pd.DataFrame) -> pd.DataFrame:
     """Create variance-covariance matrix.
 
     This function transforms the pivoted historical market dataframe with percentage changes into a variance-covariance matrix.
@@ -156,17 +156,17 @@ def variance_covariance_matrix(percentage_change_matrix:pd.DataFrame) -> pd.Data
     None: This function does not have raises.
 
     Examples:
-    >>> variance_covariance_matrix(percentage_change_matrix)
-    ticker      AAPL     GOOGL      MSFT
-    ticker                              
-    AAPL    0.000447  0.000309  0.000338
-    GOOGL   0.000309  0.000446  0.000335
-    MSFT    0.000338  0.000335  0.000422
+        >>> variance_covariance_matrix(percentage_change_matrix)
+        ticker      AAPL     GOOGL      MSFT
+        ticker                              
+        AAPL    0.000447  0.000309  0.000338
+        GOOGL   0.000309  0.000446  0.000335
+        MSFT    0.000338  0.000335  0.000422
 
     """
     return percentage_change_matrix.cov() 
 
-def weights_vector_extraction(data:JsonConfig, matrix_columns:pd.Index) -> list[int | float]:
+def weights_vector_extraction(data: JsonConfig, matrix_columns: pd.Index) -> list[int | float]:
     """Extract weights vector values.
 
     This functions extracts from config.json the weights of each ticker in order to create a weights vector.
@@ -191,7 +191,7 @@ def weights_vector_extraction(data:JsonConfig, matrix_columns:pd.Index) -> list[
     vector_validation(weight_vector)
     return weight_vector
 
-def vector_to_array(weights_vector:list[int | float]) -> NDArray:
+def vector_to_array(weights_vector: list[int | float]) -> NDArray:
     """Transform weights vector to an array.
 
     This function is in charge to transform weights vector to a weights array in order to do matrices operations.
@@ -212,7 +212,7 @@ def vector_to_array(weights_vector:list[int | float]) -> NDArray:
     """
     return np.array(weights_vector)
 
-def calculate_portfolio_percentages_changes(percentage_change_matrix:pd.DataFrame, weight_array:NDArray) -> pd.Series:
+def calculate_portfolio_percentages_changes(percentage_change_matrix: pd.DataFrame, weight_array: NDArray) -> pd.Series:
     """Calculate the daily portfolio percentage changes.
 
     This function is in charge to calculate the daily portfolio percentage changes multiplying the
@@ -229,7 +229,7 @@ def calculate_portfolio_percentages_changes(percentage_change_matrix:pd.DataFram
         ValueError: If the dimension of one of the matrices are incompatible to multiply.
 
     Examples:
-        >>>calculate_portfolio_percentages_changes(percentage_change_matrix,weights_array)
+        >>> calculate_portfolio_percentages_changes(percentage_change_matrix,weights_array)
         market_date
         2020-01-03   -0.008022
         2020-01-06    0.016234
@@ -247,7 +247,7 @@ def calculate_portfolio_percentages_changes(percentage_change_matrix:pd.DataFram
     """
     return percentage_change_matrix @ weight_array
 
-def vector_validation(weights_vector:list[int | float]) -> None:
+def vector_validation(weights_vector: list[int | float]) -> None:
     """Validate weights vector values.
 
     This functions validates if the sum of weights from the weights vector is equal to 1.0.
@@ -269,7 +269,7 @@ def vector_validation(weights_vector:list[int | float]) -> None:
     if not np.isclose(np.sum(weights_vector),1.0):
         raise ValueError(f"Portfolio size error {weights_vector}. Must be equal or near to 1.0")
 
-def portfolio_variance(var_cov_matrix:pd.DataFrame,weights_array:NDArray) -> float:
+def portfolio_variance(var_cov_matrix: pd.DataFrame, weights_array: NDArray) -> float:
     r"""Calculate portfolio variance.
 
     This function calculates the portfolio variance using the formula: w^T \cdot \Sigma \cdot w.
@@ -291,7 +291,7 @@ def portfolio_variance(var_cov_matrix:pd.DataFrame,weights_array:NDArray) -> flo
     """
     return weights_array @ var_cov_matrix @ weights_array
 
-def portfolio_volatility(portfolio_var:float) -> float:
+def portfolio_volatility(portfolio_var: float) -> float:
     r"""Calculate portfolio volatility.
 
     This function calculates portfolio volatility value using the next formula: \sigma_p = \sqrt{\sigma_p^2}.
@@ -312,7 +312,7 @@ def portfolio_volatility(portfolio_var:float) -> float:
     """
     return np.sqrt(portfolio_var)
 
-def percentage_change_matrix_means(percentage_change_matrix:pd.DataFrame) -> pd.Series:
+def percentage_change_matrix_means(percentage_change_matrix: pd.DataFrame) -> pd.Series:
     """Calculate means for each ticker column.
 
     This function is in charge to calculate the mean of percentages changes for each ticker column.
@@ -337,7 +337,7 @@ def percentage_change_matrix_means(percentage_change_matrix:pd.DataFrame) -> pd.
     """
     return percentage_change_matrix.mean()
 
-def calculate_portfolio_mean(percentage_change_means:pd.Series, weight_array:NDArray) -> float:
+def calculate_portfolio_mean(percentage_change_means: pd.Series, weight_array: NDArray) -> float:
     """Calculate portfolio mean.
 
     This function calculates portfolio mean multiplying mean values of each ticker column times
@@ -360,7 +360,7 @@ def calculate_portfolio_mean(percentage_change_means:pd.Series, weight_array:NDA
     """
     return percentage_change_means @ weight_array
 
-def confidence_level_extraction(data:JsonConfig) -> int | float:
+def confidence_level_extraction(data: JsonConfig) -> int | float:
     """Extract confidence level.
 
     This function is in charge to extract confidence level from config.json.
@@ -402,7 +402,7 @@ def z_score_calculator(confidence_level: int | float) -> float:
     """
     return norm.ppf(1-confidence_level)
 
-def parametric_var_calculator(z_score:float,portfolio_mean:float,portfolio_vol:float) -> float:
+def parametric_var_calculator(z_score: float, portfolio_mean: float, portfolio_vol: float) -> float:
     r"""Calculate Percentage Value at Risk value.
 
     This function calculates through VaR formula (x = \mu + (Z \cdot \sigma_p)) the percentage VaR value.
@@ -425,7 +425,7 @@ def parametric_var_calculator(z_score:float,portfolio_mean:float,portfolio_vol:f
     """
     return portfolio_mean + (z_score * portfolio_vol)
 
-def portfolio_value_extraction(data:JsonConfig) -> float | int:
+def portfolio_value_extraction(data: JsonConfig) -> float | int:
     """Extract portfolio value.
 
     This function is in charge to extract portfolio value from config.json.
@@ -446,7 +446,7 @@ def portfolio_value_extraction(data:JsonConfig) -> float | int:
     """
     return data["portfolio_value"]
 
-def var_money_calculator(var_value:float,portfolio_value: float | int) -> float:
+def var_money_calculator(var_value: float, portfolio_value: float | int) -> float:
     """Transform VaR value to money.
 
     This function is in charge to transform percentage VaR value to dollar VaR multiplying it with
@@ -469,7 +469,7 @@ def var_money_calculator(var_value:float,portfolio_value: float | int) -> float:
     """
     return var_value * portfolio_value * -1
 
-def run_quant_engine(data:JsonConfig,engine:Engine) -> dict[str, Any]:
+def run_quant_engine(data: JsonConfig, engine: Engine) -> dict[str, Any]:
     """
     Executes the quantitative risk pipeline. It extracts historical market data from
     PostgreSQL, computes the portfolio's variance-covariance matrix, and calculates
