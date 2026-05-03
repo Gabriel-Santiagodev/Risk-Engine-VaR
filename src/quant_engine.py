@@ -1,12 +1,10 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from db_config import get_db_engine
-from js_config import get_js_config
 from sqlalchemy.engine import Engine
-from typing import Union
 from numpy.typing import NDArray
 from js_type import JsonConfig
+from typing import Any
 
 def sql_validation(df:pd.DataFrame) -> None:
     """Validate the historical market dataframe information.
@@ -168,7 +166,7 @@ def variance_covariance_matrix(percentage_change_matrix:pd.DataFrame) -> pd.Data
     """
     return percentage_change_matrix.cov() 
 
-def weights_vector_extraction(data:JsonConfig, matrix_columns:pd.Index) -> list[Union[int,float]]:
+def weights_vector_extraction(data:JsonConfig, matrix_columns:pd.Index) -> list[int | float]:
     """Extract weights vector values.
 
     This functions extracts from config.json the weights of each ticker in order to create a weights vector.
@@ -178,7 +176,7 @@ def weights_vector_extraction(data:JsonConfig, matrix_columns:pd.Index) -> list[
         matrix_columns (pd.Index): Pivoted historical market dataframe columns.
 
     Returns:
-        list[Union[int,float]]: Weights vector.
+        list[int | float]: Weights vector.
 
     Raises: 
         ValueError: Error Inherited from vector_validation function when the sum of the weights is not equal to 1.0.
@@ -193,13 +191,13 @@ def weights_vector_extraction(data:JsonConfig, matrix_columns:pd.Index) -> list[
     vector_validation(weight_vector)
     return weight_vector
 
-def vector_to_array(weights_vector:list[Union[int,float]]) -> NDArray:
+def vector_to_array(weights_vector:list[int | float]) -> NDArray:
     """Transform weights vector to an array.
 
     This function is in charge to transform weights vector to a weights array in order to do matrices operations.
 
     Args:
-        weight_vector (list[Union[int,float]]): Weights vector.
+        weight_vector (list[int | float]): Weights vector.
 
     Returns:
         NDArray: Weights Array.
@@ -249,13 +247,13 @@ def calculate_portfolio_percentages_changes(percentage_change_matrix:pd.DataFram
     """
     return percentage_change_matrix @ weight_array
 
-def vector_validation(weights_vector:list[Union[int,float]]) -> None:
+def vector_validation(weights_vector:list[int | float]) -> None:
     """Validate weights vector values.
 
     This functions validates if the sum of weights from the weights vector is equal to 1.0.
 
     Args:
-        weights_vector (list[Union[int,float]]): Weights vector.
+        weights_vector (list[int | float]): Weights vector.
 
     Returns:
         None: This function returns nothing.
@@ -362,7 +360,7 @@ def calculate_portfolio_mean(percentage_change_means:pd.Series, weight_array:NDA
     """
     return percentage_change_means @ weight_array
 
-def confidence_level_extraction(data:JsonConfig) -> Union[int, float]:
+def confidence_level_extraction(data:JsonConfig) -> int | float:
     """Extract confidence level.
 
     This function is in charge to extract confidence level from config.json.
@@ -371,7 +369,7 @@ def confidence_level_extraction(data:JsonConfig) -> Union[int, float]:
         data (JsonConfig): Json dictionary parameters.
 
     Returns:
-        Union[int, float]: Confidence level value.
+        int | float: Confidence level value.
 
     Raises:
         KeyError: If confidence_level key does not exist.
@@ -383,13 +381,13 @@ def confidence_level_extraction(data:JsonConfig) -> Union[int, float]:
     """
     return data["confidence_level"]
 
-def z_score_calculator(confidence_level:Union[int, float]) -> float:
+def z_score_calculator(confidence_level: int | float) -> float:
     """Calculate z-score value.
 
     This function calculates negative z-score using confidence level given from config.json.
 
     Args:
-        confidence_level (Union[int, float]): Confidence level value.
+        confidence_level (int | float): Confidence level value.
 
     Returns:
         float: Negative z-score value.
@@ -427,7 +425,7 @@ def parametric_var_calculator(z_score:float,portfolio_mean:float,portfolio_vol:f
     """
     return portfolio_mean + (z_score * portfolio_vol)
 
-def portfolio_value_extraction(data:JsonConfig) -> Union[float,int]:
+def portfolio_value_extraction(data:JsonConfig) -> float | int:
     """Extract portfolio value.
 
     This function is in charge to extract portfolio value from config.json.
@@ -436,7 +434,7 @@ def portfolio_value_extraction(data:JsonConfig) -> Union[float,int]:
         data (JsonConfig): Json dictionary parameters.
 
     Returns:
-        Union[int, float]: Portfolio value.
+        float | int: Portfolio value.
 
     Raises:
         KeyError: If portfolio_value key does not exist.
@@ -448,7 +446,7 @@ def portfolio_value_extraction(data:JsonConfig) -> Union[float,int]:
     """
     return data["portfolio_value"]
 
-def var_money_calculator(var_value:float,portfolio_value:Union[float,int]) -> float:
+def var_money_calculator(var_value:float,portfolio_value: float | int) -> float:
     """Transform VaR value to money.
 
     This function is in charge to transform percentage VaR value to dollar VaR multiplying it with
@@ -456,7 +454,7 @@ def var_money_calculator(var_value:float,portfolio_value:Union[float,int]) -> fl
     
     Args:
         var_value (float): Percentage VaR value.
-        portfolio_value (Union[float,int]): Portfolio value.
+        portfolio_value (float | int): Portfolio value.
 
     Returns:
         float: VaR money value.
@@ -471,14 +469,25 @@ def var_money_calculator(var_value:float,portfolio_value:Union[float,int]) -> fl
     """
     return var_value * portfolio_value * -1
 
-def run_engine():
+def run_quant_engine(data:JsonConfig,engine:Engine) -> dict[str, Any]:
     """
     Executes the quantitative risk pipeline. It extracts historical market data from
     PostgreSQL, computes the portfolio's variance-covariance matrix, and calculates
     the 1-day parametric Value at Risk (VaR).
+
+    Args:
+        data (JsonConfig): Json dictionary parameters.
+        engine (Engine): Connection with PostgreSQL.
+
+    Returns:
+        Dict (dict[str, Any]): Dictionary with the following keys portfolio_percentages_changes, 
+        var_value, var_money, portfolio_value, confidence_level, portfolio_vol, 
+        portfolio_mean and their values.
+
+    Raises:
+        None: This function does not have raises.
+        
     """
-    data = get_js_config()
-    engine = get_db_engine()
     table_name = data["table_name"]
     df = load_raw_dataframe(table_name,engine)
     portfolio_matrix = build_portfolio_matrix(df)
@@ -496,6 +505,7 @@ def run_engine():
     var_value = parametric_var_calculator(z_score,portfolio_mean,portfolio_vol)
     portfolio_value = portfolio_value_extraction(data)
     var_money = var_money_calculator(var_value,portfolio_value)
+
     return {
         "portfolio_percentages_changes": portfolio_percentages_changes,
         "var_value": var_value,
@@ -505,12 +515,4 @@ def run_engine():
         "portfolio_vol": portfolio_vol,
         "portfolio_mean": portfolio_mean
     }
-
-if __name__ == "__main__":
-    quant_engine_dictionary = run_engine() 
-    print("Quant engine has successfully finished")
-    print("================Results================")
-    for key, value in quant_engine_dictionary.items():
-        print(f"{key}:\n{value}\n")
-
 

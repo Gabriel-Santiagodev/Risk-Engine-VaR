@@ -6,7 +6,6 @@ the entire quantitative risk engine
 """
 
 from typing import TypedDict, Any
-from typing import Union
 
 class JsonConfig(TypedDict): 
     """Configuration dictionary structure for the VaR Quant Engine.
@@ -27,7 +26,7 @@ class JsonConfig(TypedDict):
             Must be formatted as "YYYY-MM-DD"
         portfolio_value (int): The portfolio size which means the amount of money invested in the
             entire portfolio.
-        confidence_level (Union[int,float]): The statistical confidence level indicating the probability 
+        confidence_level (int | float): The statistical confidence level indicating the probability 
             that the portfolio's losses will not exceed the calculated VaR. (e.g., confidence_level": 0.99).
 
     """
@@ -36,4 +35,4 @@ class JsonConfig(TypedDict):
     start_date: str
     end_date: str
     portfolio_value: int
-    confidence_level: Union[int,float]
+    confidence_level: int | float

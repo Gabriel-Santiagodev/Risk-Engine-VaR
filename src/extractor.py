@@ -2,8 +2,6 @@ import yfinance as yf
 import pandas as pd
 import requests
 from datetime import datetime
-from db_config import get_db_engine
-from js_config import get_js_config
 from sqlalchemy.engine import Engine
 from js_type import JsonConfig
 
@@ -155,36 +153,52 @@ def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
     This function is in charge to load the historical market dataframe transformed given by transform_data function to postgreSQL.
 
     Args:
-        df(pd.DataFrame): Historical market dataframe transformed.
-        table_name(str): PostgreSQL table's name.
-        engine(Engine): Connection with PostgreSQL.
+        df (pd.DataFrame): Historical market dataframe transformed.
+        table_name (str): PostgreSQL table's name.
+        engine (Engine): Connection with PostgreSQL.
 
     Returns:
         None: This function returns nothing.
 
     Raises:
-        psycopg2.errors.UniqueViolation: If there is a duplicate primary key such as market_date or ticker.
+        Exception: If a database error occurs that is not related to a UniqueViolation.
 
     Examples:
         >>>data_to_sql(df,'historical_market_data',engine)
 
     """
-    df.to_sql(name=table_name, con=engine, if_exists='append',index=False)
+    try:
+        df.to_sql(name=table_name, con=engine, if_exists='append',index=False)
+        print("Data has been successfully saved in PostgreSQL.")
+    except Exception as e:
+        if "UniqueViolation" in str(e) or "llave duplicada" in str(e) or "duplicate key" in str(e):
+            print("Data already exists. ETL pipeline has not been initialized thus going to run quant engine.")
+        else:
+            raise e
 
-def main():
+def run_etl_pipeline(data:JsonConfig,engine:Engine) -> None:
+    """Executes the ETL pipeline.
+    
+    Extracts historical data for a specific ticker and loads it to the local PostgreSQL database.
+
+    Args:
+        data (JsonConfig): Json dictionary parameters.
+        engine (Engine): Connection with PostgreSQL.
+
+    Returns:
+        None: This function does not have returns.
+
+    Raises:
+        None: This function does not have raises.
+
     """
-    Executes the ETL pipeline. Extracts historical data for a specific ticker and loads it to the local PostgreSQL database.
-    """
-    data = get_js_config()
     tickers = tickers_list(data)
     table_name = data["table_name"]
     start_date = data["start_date"]
     end_date = data["end_date"]
     df = data_extractor(tickers,start_date,end_date)
     df = transform_data(df)
-    data_to_sql(df,table_name,get_db_engine())
+    data_to_sql(df,table_name,engine)
     
-if __name__ == "__main__":
-    main()
 
 

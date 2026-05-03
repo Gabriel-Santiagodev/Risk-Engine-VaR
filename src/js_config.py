@@ -1,7 +1,6 @@
 import os
 import json
 from typing import Any
-from typing import Union
 
 def get_js_config() -> dict[str, Any]:
     """Download data from json file

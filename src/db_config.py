@@ -10,8 +10,9 @@ def get_db_engine() -> Engine:
 
     Args:
         None: This functions does not have arguments.
+
     Returns:
-        Engine: A sqlalchemy engine.
+        Engine: Connection with PostgreSQL.
 
     Raises:
         ValueError: If one of the environment variables does not exist.
