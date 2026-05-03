@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 from sqlalchemy.engine import Engine
-from js_type import JsonConfig
+from src.utils.js_type import JsonConfig
 
 def tickers_list(data: JsonConfig) -> list[str]:
     """Extract the list of tickers from the configuration data (json.config)

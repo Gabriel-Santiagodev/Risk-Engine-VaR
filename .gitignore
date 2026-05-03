@@ -1,3 +1,17 @@
+# --- Python Artifacts ---
+__pycache__/
+*.py[cod]
+
+# --- Logs --- 
+*.log 
+logs/
+
+# --- User Configuration & OS Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
 # --- Environment variables ---
 .env 
 env/
@@ -5,5 +19,7 @@ venv/
 .venv/
 ENV/
 
-# --- Pycache ---
-__pycache__/
+# --- Tests ---
+.pytest_cache/
+.coverage
+htmlcov/
