@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy.engine import Engine
 from js_type import JsonConfig
 
-def tickers_list(data:JsonConfig) -> list[str]:
+def tickers_list(data: JsonConfig) -> list[str]:
     """Extract the list of tickers from the configuration data (json.config)
 
     This function accesses the 'weight_tickers' dictionary inside the JSON configuration
@@ -28,7 +28,7 @@ def tickers_list(data:JsonConfig) -> list[str]:
     """
     return list(data["weight_tickers"].keys()) 
 
-def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
+def date_validator(start_date: str, end_date: str) -> tuple[str, str]:
     """Validate the date format.
     
     This function validates if the date format is correct. All parameters must be strings.
@@ -53,7 +53,7 @@ def date_validator(start_date:str, end_date:str) -> tuple[str, str]:
     datetime.strptime(end_date, "%Y-%m-%d")
     return start_date, end_date
     
-def data_extractor(tickers:list[str], start_date:str,end_date:str) -> pd.DataFrame:
+def data_extractor(tickers: list[str], start_date: str, end_date: str) -> pd.DataFrame:
     """Extract a raw dataframe  from yahoo finance.
     
     This function downloads the historical market using for a given ticker, start date and end date.
@@ -74,7 +74,7 @@ def data_extractor(tickers:list[str], start_date:str,end_date:str) -> pd.DataFra
         requests.exceptions.HTTPError: If there is a HTTP error.
 
     Examples:
-        >>>data_extractor(["GOOGL","AAPL"],"2020-01-01","2024-01-01")
+        >>> data_extractor(["GOOGL","AAPL"],"2020-01-01","2024-01-01")
         Price        Adj Close                   Close              ...        Open                 Volume
         Ticker            AAPL       GOOGL        AAPL       GOOGL  ...        AAPL       GOOGL       AAPL     GOOGL
         Date                                                        ...
@@ -112,7 +112,7 @@ def data_extractor(tickers:list[str], start_date:str,end_date:str) -> pd.DataFra
         raise ValueError(f"data from {start_date} to {end_date} not found using {tickers} tickers")
     return data
 
-def transform_data(df:pd.DataFrame) -> pd.DataFrame:
+def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     """Transform raw dataframe.
 
     This functions is in charge to transform the columns name, add ticker columns and reset indexes.
@@ -127,7 +127,7 @@ def transform_data(df:pd.DataFrame) -> pd.DataFrame:
         None: This function does not have raises.
     
     Examples:
-        >>>transform_data(df)
+        >>> transform_data(df)
         Price market_date ticker   adj_close  close_price  high_price   low_price  open_price     volume
         0      2020-01-02   AAPL   72.400513    75.087502   75.150002   73.797501   74.059998  135480400
         1      2020-01-02  GOOGL   67.873024    68.433998   68.433998   67.324501   67.420502   27278000
@@ -147,7 +147,7 @@ def transform_data(df:pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns={'Date': 'market_date','Close': 'close_price','High': 'high_price','Low': 'low_price','Open': 'open_price','Volume': 'volume','Adj Close': 'adj_close','Ticker':'ticker'})
     return df
 
-def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
+def data_to_sql(df: pd.DataFrame, table_name: str, engine: Engine) -> None:
     """Load historical market dataframe transformed to PostgreSQL.
 
     This function is in charge to load the historical market dataframe transformed given by transform_data function to postgreSQL.
@@ -164,7 +164,7 @@ def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
         Exception: If a database error occurs that is not related to a UniqueViolation.
 
     Examples:
-        >>>data_to_sql(df,'historical_market_data',engine)
+        >>> data_to_sql(df,'historical_market_data',engine)
 
     """
     try:
@@ -176,7 +176,7 @@ def data_to_sql(df:pd.DataFrame,table_name:str,engine:Engine) -> None:
         else:
             raise e
 
-def run_etl_pipeline(data:JsonConfig,engine:Engine) -> None:
+def run_etl_pipeline(data: JsonConfig, engine: Engine) -> None:
     """Executes the ETL pipeline.
     
     Extracts historical data for a specific ticker and loads it to the local PostgreSQL database.
