@@ -16,7 +16,7 @@ class JsonConfig(TypedDict):
     incorrect data types.
 
     Attributes:
-        weight_tickers (dict[str, Any]): A dictionary mapping stock tickers (str)
+        weight_tickers (dict[str, float | int]): A dictionary mapping stock tickers (str)
             to their respective porfolio weights. The sum of all weights must equal
             1.0. (e.g., {"AAPL": 0.5, "GOOGL": 0.5}).
         table_name (str): The name of the PostgreSQL table where historical market data is stored.
@@ -30,7 +30,7 @@ class JsonConfig(TypedDict):
             that the portfolio's losses will not exceed the calculated VaR. (e.g., confidence_level": 0.99).
 
     """
-    weight_tickers: dict[str, Any]
+    weight_tickers: dict[str, float | int]
     table_name: str
     start_date: str
     end_date: str

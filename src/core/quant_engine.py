@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import norm
 from sqlalchemy.engine import Engine
 from numpy.typing import NDArray
-from js_type import JsonConfig
+from src.utils.js_type import JsonConfig
 from typing import Any
 
 def sql_validation(df: pd.DataFrame) -> None:

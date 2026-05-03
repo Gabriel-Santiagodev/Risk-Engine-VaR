@@ -1,8 +1,8 @@
-from visualizer import plot_return_density_with_var
-from quant_engine import run_quant_engine
-from extractor import run_etl_pipeline
-from db_config import get_db_engine
-from js_config import get_js_config
+from src.core.visualizer import plot_return_density_with_var
+from src.core.quant_engine import run_quant_engine
+from src.core.extractor import run_etl_pipeline
+from database.db_config import get_db_engine
+from config.js_config import get_js_config
     
 def execute_dashboard() -> None:
     """Execute the visualization dashboard.

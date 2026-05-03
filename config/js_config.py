@@ -30,7 +30,7 @@ def get_js_config() -> dict[str, Any]:
         >>>confidence_level = data["confidence_level"]
     
     """
-    route = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "config.json")
+    route = os.path.join(os.path.dirname(__file__), "config.json")
     if not os.path.exists(route):
         raise FileNotFoundError(f"Route {route} or file config.json do not exist.")
     try:
