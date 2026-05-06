@@ -1,52 +1,55 @@
 import matplotlib.pyplot as plt
-import pandas as pd
+from matplotlib.ticker import PercentFormatter
 import numpy as np
 from numpy.typing import NDArray
-from matplotlib.ticker import PercentFormatter
+import pandas as pd
 from scipy.stats import norm
 
-def _generate_x_axis(portfolio_percentages_changes: pd.Series) -> NDArray:
-    """Generate Values in the X-axis.
+from src.utils.logger import setup_logging
 
-    This function is in charge to pick the minimum percentage change value of the 
-    portfolio's percentages changes and the maximum percentage change value in order to
-    return a percentage changes values array from the minimum to the maximum with the same
-    numerical space between them.
+logger = setup_logging(__name__)
+
+
+def _generate_x_axis(portfolio_percentage_changes: pd.Series) -> NDArray:
+    """Generates values for the X-axis.
+
+    Generates an array of evenly spaced values between the minimum and maximum portfolio percentage changes.
 
     Args:
-        portfolio_percentages_changes (pd.Series): Daily portfolio percentage changes.
+        portfolio_percentage_changes (pd.Series): Daily portfolio percentage changes.
 
     Returns:
-        NDArray: Percentage changes values array with the same numerical space between them.
+        NDArray: Array of evenly spaced percentage change values.
 
     Raises:
         None: This function does not have raises.
 
     Examples:
-        >>> _generate_x_axis(portfolio_percentages_changes:pd.Series)
+        >>> _generate_x_axis(portfolio_percentage_changes)
         [-1.26243136e-01 -1.26006073e-01 -1.25769011e-01 -1.25531948e-01
         ...
         1.09871128e-01  1.10108190e-01  1.10345253e-01  1.10582315e-01]
 
     """
-    min_percentage = portfolio_percentages_changes.min()
-    max_percentage = portfolio_percentages_changes.max()
+    min_percentage = portfolio_percentage_changes.min()
+    max_percentage = portfolio_percentage_changes.max()
     return np.linspace(min_percentage, max_percentage, num=1000)
 
-def _generate_y_axis(x_axis: NDArray, portfolio_mean: float, portfolio_vol: float) -> NDArray:
-    r"""Calculate Empirical Density of each X-axis value.
 
-    This function is in charge to apply probability density function formula (PDF)
-    f(w) = 1 / ((2\pi)^{d/2} \cdot |\Sigma|^{1/2}) \cdot exp(-1/2 \cdot (w - \mu)^T \cdot \Sigma^{-1} \cdot (w - \mu))
-    to each value of the X-axis in order to calculate their density in the Y-axis and return a densities array.
+def _generate_y_axis(x_axis: NDArray, portfolio_mean: float, portfolio_vol: float) -> NDArray:
+    r"""Calculates the Probability Density for Each X-axis Value.
+
+    Applies the univariate normal probability density function (PDF) using the formula:
+    $f(x) = \frac{1}{\sigma \sqrt{2\pi}} \exp\left(-\frac{1}{2}\left(\frac{x - \mu}{\sigma}\right)^2\right)$
+    to each value of the X-axis to compute a density array.
 
     Args:
-        x_axis (NDArray): Percentage changes values array with the same numerical space between them.
+        x_axis (NDArray): Array of evenly spaced percentage change values.
         portfolio_mean (float): Portfolio mean value.
         portfolio_vol (float): Portfolio volatility value.
 
     Returns:
-        NDArray: Densities Array.
+        NDArray: Array of probability density values.
 
     Raises:
         None: This function does not have raises.
@@ -59,15 +62,15 @@ def _generate_y_axis(x_axis: NDArray, portfolio_mean: float, portfolio_vol: floa
     """
     return norm.pdf(x_axis, portfolio_mean, portfolio_vol)
 
-def plot_return_density_with_var(portfolio_percentages_changes: pd.Series, portfolio_mean: float, portfolio_vol: float, var_value: float, confidence_level: int | float) -> None:
-    """Plots the Empirical Density Portfolio Returns with a Normal Distribution and a Parametric VaR Line.
 
-    This function is in charge to plot a normalized percentages changes histogram (empirical density).
-    It overlays an adjusted normal distribution curve (Gauss Bell) and marks the VaR value
-    with a line.
+def plot_return_density_with_var(portfolio_percentage_changes: pd.Series, portfolio_mean: float, portfolio_vol: float, var_value: float, confidence_level: int | float) -> None:
+    """Plots the Empirical Density of Portfolio Returns with a Normal Distribution and VaR overlay.
+
+    Plots a normalized percentage changes histogram (empirical density). It overlays an adjusted 
+    normal distribution curve (Gauss Bell) and marks the VaR value with a line.
 
     Args:
-        portfolio_percentages_changes (pd.Series): Daily portfolio percentage changes.
+        portfolio_percentage_changes (pd.Series): Daily portfolio percentage changes.
         portfolio_mean (float): Portfolio mean value.
         portfolio_vol (float): Portfolio volatility value.
         var_value (float): Percentage VaR value.
@@ -80,7 +83,7 @@ def plot_return_density_with_var(portfolio_percentages_changes: pd.Series, portf
         None: This function does not have raises.
 
     Examples:
-        >>> plot_return_density_with_var(portfolio_percentages_changes, portfolio_mean, portfolio_vol, var_value, confidence_level)
+        >>> plot_return_density_with_var(portfolio_percentage_changes, portfolio_mean, portfolio_vol, var_value, confidence_level)
         # Opens a matplotlib window displaying the empirical density histogram.
 
     """
@@ -88,7 +91,7 @@ def plot_return_density_with_var(portfolio_percentages_changes: pd.Series, portf
 
     # Empirical Histogram Plot.
     ax.hist(
-        portfolio_percentages_changes, 
+        portfolio_percentage_changes, 
         bins=70,
         density=True,
         color='steelblue',
@@ -108,8 +111,7 @@ def plot_return_density_with_var(portfolio_percentages_changes: pd.Series, portf
     ax.xaxis.set_major_formatter(PercentFormatter(xmax=1.0))
 
     # Normal Distribution (Gauss Bell) Plot.
-    
-    x_axis = _generate_x_axis(portfolio_percentages_changes)
+    x_axis = _generate_x_axis(portfolio_percentage_changes)
     y_axis = _generate_y_axis(x_axis, portfolio_mean, portfolio_vol)
     ax.plot(
         x_axis,
@@ -120,7 +122,6 @@ def plot_return_density_with_var(portfolio_percentages_changes: pd.Series, portf
     )
 
     # VaR Value Line.
-
     ax.axvline(
         var_value,
         color='darkorange',
@@ -129,6 +130,6 @@ def plot_return_density_with_var(portfolio_percentages_changes: pd.Series, portf
     )
 
     ax.legend()
+    logger.info("Successfully rendered portfolio returns density plot with VaR overlay.")
 
     plt.show()
-
