@@ -157,9 +157,9 @@ def _data_to_sql(df: pd.DataFrame, table_name: str, engine: Engine) -> None:
             df.to_sql(name=table_name, con=conn, if_exists='append', index=False)
             logger.info(f"Data successfully saved to PostgreSQL in table '{table_name}'.")
         
-    except Exception as e:
+    except Exception:
         logger.exception("Failed to insert data into PostgreSQL.")
-        raise e
+        raise 
 
 
 def run_etl_pipeline(data: JsonConfig, engine: Engine) -> None:
