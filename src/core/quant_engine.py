@@ -69,7 +69,7 @@ def _load_raw_dataframe(table_name: str, engine: Engine) -> pd.DataFrame:
         )
     except Exception as e:
         logger.exception(f"Failed to execute SQL query on table '{table_name}': {e}")
-        raise e
+        raise 
     
     _sql_validation(df)
 

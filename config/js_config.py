@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from typing import Any
 
 import numpy as np
@@ -16,7 +16,7 @@ def _detect_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     file to prevent silent overwrites.
 
     Args:
-        pairs (list[tuple[str, Any]]): "List of key-value tuple pairs.
+        pairs (list[tuple[str, Any]]): List of key-value tuple pairs.
 
     Returns:
         dict[str, Any]: Dictionary created from the parsed key-value pairs.
@@ -62,6 +62,30 @@ def _vector_validation(weights_vector: list[int | float]) -> None:
         raise ValueError(f"Portfolio size error {weights_vector}. Must be equal or near to 1.0")
 
 
+def _confidence_level_validation(confidence_level: float | int) -> None:
+    """Validates confidence level.
+
+    Validates if confidence level is less than 1.0 and greater than 0.0.
+
+    Args: 
+        confidence_level (float | int): Confidence level value.
+
+    Returns:
+        None: This function returns nothing.
+
+    Raises:
+        ValueError: If the confidence level is not between 0.0 and 1.0.
+
+    Examples:
+        >>> _confidence_level_validation(2)
+        ValueError: Confidence level 2 invalid. Must be strictly between 0 and 1 (e.g., 0.95 or 0.99).
+
+    """
+    if not (0 < confidence_level < 1):
+        logger.error(f"Confidence level {confidence_level} invalid. Must be strictly between 0 and 1 (e.g., 0.95 or 0.99).")
+        raise ValueError(f"Confidence level {confidence_level} invalid. Must be strictly between 0 and 1 (e.g., 0.95 or 0.99).")
+
+
 def get_js_config() -> dict[str, Any]:
     """Loads data from the JSON configuration file.
 
@@ -99,6 +123,7 @@ def get_js_config() -> dict[str, Any]:
         with open(route, "r", encoding="utf-8") as f:
             data = json.load(f, object_pairs_hook=_detect_duplicates)
             _vector_validation(list(data["weight_tickers"].values()))
+            _confidence_level_validation(data["confidence_level"])
             data["tickers_list"] = list(data["weight_tickers"].keys())
             logger.info("JSON configuration file successfully loaded and parsed.")
             return data
@@ -107,6 +132,9 @@ def get_js_config() -> dict[str, Any]:
         logger.error(f"Error decoding json file: {e}")
         raise ValueError(f"Error decoding json file {e}")
     
+    except ValueError:
+        raise
+
     except Exception as e:
         logger.exception(f"Unexpected error trying to read json file: {e}")
         raise RuntimeError(f"Unexpected error trying to read json file: {e}")
