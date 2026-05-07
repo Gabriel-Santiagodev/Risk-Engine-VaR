@@ -112,12 +112,13 @@ def get_js_config() -> dict[str, Any]:
         >>> end_date = data["end_date"]
         >>> portfolio_value = data["portfolio_value"]
         >>> confidence_level = data["confidence_level"]
+        >>> tickers = data["tickers_list"]
     
     """
     route = os.path.join(os.path.dirname(__file__), "config.json")
     if not os.path.exists(route):
-        logger.error(f"Route {route} or file config.json do not exist.")
-        raise FileNotFoundError(f"Route {route} or file config.json do not exist.")
+        logger.error(f"Route {route} or file config.json does not exist.")
+        raise FileNotFoundError(f"Route {route} or file config.json does not exist.")
     
     try:
         with open(route, "r", encoding="utf-8") as f:

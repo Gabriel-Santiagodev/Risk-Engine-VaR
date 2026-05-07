@@ -158,7 +158,7 @@ def _data_to_sql(df: pd.DataFrame, table_name: str, engine: Engine) -> None:
             logger.info(f"Data successfully saved to PostgreSQL in table '{table_name}'.")
         
     except Exception:
-        logger.exception("Failed to insert data into PostgreSQL.")
+        logger.exception("Error trying to insert data into PostgreSQL.")
         raise 
 
 
