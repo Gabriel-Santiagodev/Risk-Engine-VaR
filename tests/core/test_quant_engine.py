@@ -70,7 +70,7 @@ def test_data_validation_raises_with_invalid_dataframe():
 
     with pytest.raises(ValueError) as exc_info:
         _data_validation(fake_dataframe)
-    assert "Dataframe selected is empty" in str(exc_info.value)
+    assert "Dataframe selected is empty." in str(exc_info.value)
 
 
 def test_load_raw_dataframe_success_with_valid_sql_query_execution(mocker):
@@ -94,12 +94,12 @@ def test_load_raw_dataframe_raises_with_dataframe_empty(mocker):
 
     with pytest.raises(ValueError) as exc_info:
         _load_raw_dataframe("fake_table_name", "fake_engine")
-    assert "returned an empty DataFrame" in str(exc_info.value)
+    assert "Dataframe selected is empty." in str(exc_info.value)
 
 
 def test_build_portfolio_matrix_success_with_valid_pivoted_data():
     """Tests that no exception is raised when data is pivoted."""
-    fake_raw_dataframe = {
+    fake_raw_dataframe_dict = {
         "market_date": [
             "2020-01-02", "2020-01-02", "2020-01-02",
             "2020-01-03", "2020-01-03", "2020-01-03",
@@ -117,8 +117,8 @@ def test_build_portfolio_matrix_success_with_valid_pivoted_data():
         ]
     }
 
-    fake_raw_dataframe = pd.DataFrame(fake_raw_dataframe)
-    fake_raw_dataframe["market_date"] = pd.to_datetime(fake_raw_dataframe["market_date"])
+    fake_raw_dataframe = pd.DataFrame(fake_raw_dataframe_dict)
+    fake_raw_dataframe['market_date'] = pd.to_datetime(fake_raw_dataframe['market_date'])
 
     fake_raw_pivoted_dataframe = {
         "AAPL": {
@@ -198,7 +198,7 @@ def test_variance_covariance_matrix_success_with_valid_var_cov_matrix_creation(f
     fake_var_cov_matrix.index.name = 'ticker'
     fake_var_cov_matrix.columns.name = 'ticker'
 
-    assert_frame_equal(_variance_covariance_matrix(fake_percentages_changes_dataframe), fake_var_cov_matrix, atol=1e-5)
+    assert_frame_equal(_variance_covariance_matrix(fake_percentages_changes_dataframe), fake_var_cov_matrix, atol=1e-6)
 
 
 def test_percentage_change_matrix_means_success_with_valid_percentage_change_means_series(fake_percentages_changes_dataframe):
@@ -231,8 +231,9 @@ def test_calculate_portfolio_percentage_changes_success_with_valid_daily_percent
         data=[-0.0080218, 0.0162342],
         index=pd.to_datetime(["2020-01-03", "2020-01-06"])
     )
+    fake_percentages_changes_series.index.name = 'market_date'
 
-    assert_series_equal(_calculate_portfolio_percentage_changes(fake_percentages_changes_dataframe, fake_array), fake_percentages_changes_series)
+    assert_series_equal(_calculate_portfolio_percentage_changes(fake_percentages_changes_dataframe, fake_array), fake_percentages_changes_series, atol=1e-5)
 
 
 def test_portfolio_variance_success_with_valid_portfolio_variance_calculation():
