@@ -12,8 +12,8 @@ from src.utils.logger import setup_logging
 logger = setup_logging(__name__)
 
 
-def _sql_validation(df: pd.DataFrame) -> None:
-    """Validates the historical market data.
+def _data_validation(df: pd.DataFrame) -> None:
+    """Validates the historical market data stored in a SQL database.
 
     Validates if the historical market data is empty or not.
 
@@ -71,7 +71,7 @@ def _load_raw_dataframe(table_name: str, engine: Engine) -> pd.DataFrame:
         logger.exception(f"Failed to execute SQL query on table '{table_name}': {e}")
         raise 
     
-    _sql_validation(df)
+    _data_validation(df)
 
     return df
 
@@ -271,13 +271,16 @@ def _portfolio_volatility(portfolio_var: float) -> float:
         float: Portfolio volatility value.
 
     Raises:
-        None: This function does not have raises.
+        ValueError: If portfolio variance is zero or negative.
 
     Examples:
         >>> _portfolio_volatility(portfolio_var)
         0.019207043505641303
 
     """
+    if portfolio_var <= 0.0:
+        logger.error("Portfolio variance is zero or negative. Possible stale market data.")
+        raise ValueError("Portfolio variance and volatility must be strictly greater than 0.")
     return np.sqrt(portfolio_var)
 
 
@@ -287,7 +290,7 @@ def _percentage_change_matrix_means(percentage_change_matrix: pd.DataFrame) -> p
     Calculates the mean of percentages changes for each ticker column.
 
     Args:
-        percentage_change_matrix (pd.DataFrame): Pivoted historical market dataframe.
+        percentage_change_matrix (pd.DataFrame): Pivoted historical market dataframe with percentage changes.
 
     Returns:
         pd.Series: Mean value of each ticker column.
