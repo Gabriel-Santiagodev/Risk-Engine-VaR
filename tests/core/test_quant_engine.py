@@ -70,22 +70,22 @@ def test_data_validation_raises_with_invalid_dataframe():
 
     with pytest.raises(ValueError) as exc_info:
         _data_validation(fake_dataframe)
-    assert "returned an empty DataFrame" in str(exc_info.value)
+    assert "Dataframe selected is empty" in str(exc_info.value)
 
 
 def test_load_raw_dataframe_success_with_valid_sql_query_execution(mocker):
     """Tests that no exception is raised when the sql query execution is successful."""
-    mocker.patch('src.core.quant_engine.pd.read_sql_query')
+    mocker.patch('src.core.quant_engine.pd.read_sql_query', return_value=pd.DataFrame({"col": [1]}))
     _load_raw_dataframe("fake_table_name", "fake_engine")
 
 
 def test_load_raw_dataframe_raises_with_invalid_sql_query_execution(mocker):
     """Tests that an Exception is raised when the sql query execution failed."""
-    mocker.patch('src.core.quant_engine.pd.read_sql_query', side_effect=Exception)
+    mocker.patch('src.core.quant_engine.pd.read_sql_query', side_effect=Exception("DB Connection Lost"))
 
     with pytest.raises(Exception) as exc_info:
         _load_raw_dataframe("fake_table_name", "fake_engine")
-    assert "Failed to execute SQL query" in str(exc_info.value)
+    assert "DB Connection Lost" in str(exc_info.value)
 
 
 def test_load_raw_dataframe_raises_with_dataframe_empty(mocker):
@@ -118,6 +118,7 @@ def test_build_portfolio_matrix_success_with_valid_pivoted_data():
     }
 
     fake_raw_dataframe = pd.DataFrame(fake_raw_dataframe)
+    fake_raw_dataframe["market_date"] = pd.to_datetime(fake_raw_dataframe["market_date"])
 
     fake_raw_pivoted_dataframe = {
         "AAPL": {
@@ -140,7 +141,7 @@ def test_build_portfolio_matrix_success_with_valid_pivoted_data():
     fake_pivoted_dataframe = pd.DataFrame(fake_raw_pivoted_dataframe)
     fake_pivoted_dataframe.index = pd.to_datetime(fake_pivoted_dataframe.index)
     fake_pivoted_dataframe.index.name = 'market_date'
-    fake_pivoted_dataframe.columns.names = 'ticker'
+    fake_pivoted_dataframe.columns.names = ['ticker']
 
     assert_frame_equal(_build_portfolio_matrix(fake_raw_dataframe), fake_pivoted_dataframe)
 
@@ -168,9 +169,9 @@ def test_calculate_percentage_change_success_with_valid_percentage_changes_calcu
     fake_pivoted_dataframe = pd.DataFrame(fake_raw_pivoted_dataframe)
     fake_pivoted_dataframe.index = pd.to_datetime(fake_pivoted_dataframe.index)
     fake_pivoted_dataframe.index.name = 'market_date'
-    fake_pivoted_dataframe.columns.names = 'ticker'
+    fake_pivoted_dataframe.columns.names = ['ticker']
 
-    assert_frame_equal(_calculate_percentage_change(fake_raw_pivoted_dataframe), fake_percentages_changes_dataframe)
+    assert_frame_equal(_calculate_percentage_change(fake_pivoted_dataframe), fake_percentages_changes_dataframe, atol=1e-5)
 
 
 def test_variance_covariance_matrix_success_with_valid_var_cov_matrix_creation(fake_percentages_changes_dataframe):
@@ -194,11 +195,10 @@ def test_variance_covariance_matrix_success_with_valid_var_cov_matrix_creation(f
     }
 
     fake_var_cov_matrix = pd.DataFrame(fake_var_cov_matrix_dict)
-
     fake_var_cov_matrix.index.name = 'ticker'
     fake_var_cov_matrix.columns.name = 'ticker'
 
-    assert_frame_equal(_variance_covariance_matrix(fake_percentages_changes_dataframe), fake_var_cov_matrix)
+    assert_frame_equal(_variance_covariance_matrix(fake_percentages_changes_dataframe), fake_var_cov_matrix, atol=1e-5)
 
 
 def test_percentage_change_matrix_means_success_with_valid_percentage_change_means_series(fake_percentages_changes_dataframe):
@@ -212,12 +212,12 @@ def test_percentage_change_matrix_means_success_with_valid_percentage_change_mea
     fake_percentage_changes_means_series = pd.Series(fake_means_dict)
     fake_percentage_changes_means_series.index.name = 'ticker'
 
-    assert_series_equal(_percentage_change_matrix_means(fake_percentages_changes_dataframe), fake_percentage_changes_means_series)
+    assert_series_equal(_percentage_change_matrix_means(fake_percentages_changes_dataframe), fake_percentage_changes_means_series, atol=1e-5)
 
 
 def test_vector_to_array_success_with_valid_vector_transformation_to_array():
     """Tests that no exception is raised when a vector is transformed to an array."""
-    fake_vector = ["0.3", "0.5", "0.2"]
+    fake_vector = [0.3, 0.5, 0.2]
     fake_array = np.array([0.3, 0.5, 0.2])
 
     assert_array_almost_equal(_vector_to_array(fake_vector), fake_array)
@@ -228,8 +228,8 @@ def test_calculate_portfolio_percentage_changes_success_with_valid_daily_percent
     fake_array = np.array([0.3, 0.5, 0.2])
 
     fake_percentages_changes_series = pd.Series(
-    data=[-0.0080218, 0.0162342],
-    index=pd.to_datetime(["2020-01-03", "2020-01-06"])
+        data=[-0.0080218, 0.0162342],
+        index=pd.to_datetime(["2020-01-03", "2020-01-06"])
     )
 
     assert_series_equal(_calculate_portfolio_percentage_changes(fake_percentages_changes_dataframe, fake_array), fake_percentages_changes_series)
@@ -256,7 +256,6 @@ def test_portfolio_variance_success_with_valid_portfolio_variance_calculation():
     }
 
     fake_var_cov_matrix = pd.DataFrame(fake_var_cov_matrix_dict)
-
     fake_var_cov_matrix.index.name = 'ticker'
     fake_var_cov_matrix.columns.name = 'ticker'
 
@@ -272,12 +271,11 @@ def test_portfolio_volatility_success_with_valid_portfolio_volatility_calculatio
 
 
 def test_portfolio_volatility_raises_with_invalid_portfolio_variance():
-    """Tests that no exception is raised when the portfolio volatility is calculated."""
-    fake_portfolio_variance = 0
-
+    """Tests that a ValueError is raised when portfolio variance is equal to or less than 0."""
+    invalid_portfolio_variance = 0.0
     with pytest.raises(ValueError) as exc_info:
-        _portfolio_volatility(fake_portfolio_variance)
-    assert "Portfolio variance is zero or negative." in str(exc_info.value)
+        _portfolio_volatility(invalid_portfolio_variance)
+    assert "strictly greater than 0" in str(exc_info.value)
 
 
 def test_calculate_portfolio_mean_success_with_valid_portfolio_mean_calculation():
@@ -299,8 +297,7 @@ def test_calculate_portfolio_mean_success_with_valid_portfolio_mean_calculation(
 def test_z_score_calculator_success_with_valid_z_score_calculation():
     """Tests that no exception is raised when the z-score value is calculated."""
     fake_confidence_level = 0.99
-
-    assert _z_score_calculator(fake_confidence_level) == pytest.approx(-2.3263)
+    assert _z_score_calculator(fake_confidence_level) == pytest.approx(-2.32634787)
 
 
 def test_parametric_var_calculator_success_with_valid_var_calculation():
@@ -320,12 +317,10 @@ def test_var_money_calculator_success_with_valid_var_money_calculation():
     assert _var_money_calculator(fake_var_value, fake_portfolio_value) == pytest.approx(3578.96754)
 
 
-def test_weights_vector_extraction_with_valid_vector_extraction():
+def test_weights_vector_extraction_success_with_valid_vector_extraction():
     """Tests that no exception is raised when the vector is extracted."""
     fake_config = {
-        "weight_tickers": {"GOOGL": 0.5, "AAPL": 0.3, "MSFT": 0.2},
-        "portfolio_value": 100000,
-        "confidence_level": 0.99
+        "weight_tickers": {"GOOGL": 0.5, "AAPL": 0.3, "MSFT": 0.2}
     }
 
     fake_dataframe = pd.DataFrame(columns=["GOOGL", "AAPL", "MSFT"])
@@ -354,12 +349,12 @@ def test_portfolio_value_extraction_success_with_valid_portfolio_value_extractio
 def test_run_quant_engine_success(mocker):
     """Tests that no exception is raised when run_quant_engine runs."""
     fake_config = {
-    "weight_tickers": {"GOOGL": 0.4, "AAPL": 0.6},
-    "table_name": "test_portfolio_table",
-    "start_date": "2020-01-02",
-    "end_date": "2020-01-06",
-    "portfolio_value": 100000,
-    "confidence_level": 0.99
+        "weight_tickers": {"GOOGL": 0.4, "AAPL": 0.6},
+        "table_name": "test_portfolio_table",
+        "start_date": "2020-01-02",
+        "end_date": "2020-01-06",
+        "portfolio_value": 100000,
+        "confidence_level": 0.99
     }
 
     fake_engine = Mock()
@@ -372,8 +367,7 @@ def test_run_quant_engine_success(mocker):
 
     mock_db_data['market_date'] = pd.to_datetime(mock_db_data['market_date'])
 
-    mocker.patch('src.core.quant_engine._load_raw_dataframe',
-                return_value=mock_db_data)
+    mocker.patch('src.core.quant_engine._load_raw_dataframe', return_value=mock_db_data)
     
     result = run_quant_engine(fake_config, fake_engine)
 

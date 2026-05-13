@@ -9,7 +9,7 @@ logger = setup_logging(__name__)
 
 
 def execute_dashboard() -> None:
-    """Executes the visualization dashboard.
+    """Executes the dashboard visualization.
 
     Orchestrates the quantitative analysis process. It calls the quant
     engine to retrieve the values from its dictionary and passes them to the visualizer 
