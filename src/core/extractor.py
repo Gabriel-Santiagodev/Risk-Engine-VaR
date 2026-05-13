@@ -14,7 +14,7 @@ logger = setup_logging(__name__)
 
 def _date_validator(start_date: str, end_date: str) -> tuple[str, str]:
     """Validates the date format.
-    
+
     Validates if the date format is correct. All parameters must be strings.
 
     Args:
@@ -40,7 +40,7 @@ def _date_validator(start_date: str, end_date: str) -> tuple[str, str]:
 
 def _data_extractor(tickers: list[str], start_date: str, end_date: str) -> pd.DataFrame:
     """Extracts raw historical market data from Yahoo Finance.
-    
+
     Extracts raw historical market data for the specified tickers tickers from Yahoo Finance 
     using a date range defined by start_date and end_date.
 
@@ -111,14 +111,14 @@ def _transform_data(df: pd.DataFrame) -> pd.DataFrame:
 
     Raises:
         None: This function does not have raises.
-    
+
     Examples:
         >>> _transform_data(df)
         Price market_date ticker   adj_close  close_price  high_price   low_price  open_price     volume
         0      2020-01-02   AAPL   72.400513    75.087502   75.150002   73.797501   74.059998  135480400
         1      2020-01-02  GOOGL   67.873024    68.433998   68.433998   67.324501   67.420502   27278000
         2      2020-01-02   MSFT  152.158386   160.619995  160.729996  158.330002  158.779999   22622100
-        
+
     """
     df = df.stack()
     df = df.reset_index()
@@ -156,7 +156,7 @@ def _data_to_sql(df: pd.DataFrame, table_name: str, engine: Engine) -> None:
             conn.execute(text(f"TRUNCATE TABLE {table_name}"))
             df.to_sql(name=table_name, con=conn, if_exists='append', index=False)
             logger.info(f"Data successfully saved to PostgreSQL in table '{table_name}'.")
-        
+
     except Exception:
         logger.exception("Error trying to insert data into PostgreSQL.")
         raise 
@@ -164,7 +164,7 @@ def _data_to_sql(df: pd.DataFrame, table_name: str, engine: Engine) -> None:
 
 def run_etl_pipeline(data: JsonConfig, engine: Engine) -> None:
     """Executes the ETL pipeline.
-    
+
     Extracts historical data for specific tickers, transforms the data structure,
     and loads it into the local PostgreSQL database.
 

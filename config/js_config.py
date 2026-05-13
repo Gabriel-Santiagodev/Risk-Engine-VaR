@@ -113,13 +113,13 @@ def get_js_config() -> dict[str, Any]:
         >>> portfolio_value = data["portfolio_value"]
         >>> confidence_level = data["confidence_level"]
         >>> tickers = data["tickers_list"]
-    
+
     """
     route = os.path.join(os.path.dirname(__file__), "config.json")
     if not os.path.exists(route):
         logger.error(f"Route {route} or file config.json does not exist.")
         raise FileNotFoundError(f"Route {route} or file config.json does not exist.")
-    
+
     try:
         with open(route, "r", encoding="utf-8") as f:
             data = json.load(f, object_pairs_hook=_detect_duplicates)
@@ -128,11 +128,11 @@ def get_js_config() -> dict[str, Any]:
             data["tickers_list"] = list(data["weight_tickers"].keys())
             logger.info("JSON configuration file successfully loaded and parsed.")
             return data
-        
+
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding json file: {e}")
         raise ValueError(f"Error decoding json file {e}")
-    
+
     except ValueError:
         raise
 

@@ -27,7 +27,7 @@ def get_db_engine() -> Engine:
 
     Examples:
         >>> engine = get_db_engine()
-    
+
     """
     load_dotenv()
     db_user = os.getenv("DB_USER")
@@ -42,5 +42,5 @@ def get_db_engine() -> Engine:
 
     engine = create_engine(f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}")
     logger.info(f"Database engine successfully created for host: {db_host}, db: {db_name}")
-    
+
     return engine

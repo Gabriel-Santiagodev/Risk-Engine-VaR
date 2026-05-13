@@ -80,12 +80,12 @@ def test_get_js_config_returns_dict_when_file_is_valid(mocker):
     """Tests that no exception is raised and a valid dictionary is returned when the config.json file is loaded."""
     mocker.patch('os.path.exists', return_value=True)
     valid_json_file = mocker.mock_open(read_data="""{
-    "weight_tickers": {"GOOGL": 0.5, "AAPL": 0.3, "MSFT": 0.2},
-    "table_name": "historical_market_data",
-    "start_date": "2018-01-01",
-    "end_date": "2024-01-01",
-    "portfolio_value": 100000,
-    "confidence_level": 0.99
+        "weight_tickers": {"GOOGL": 0.5, "AAPL": 0.3, "MSFT": 0.2},
+        "table_name": "historical_market_data",
+        "start_date": "2018-01-01",
+        "end_date": "2024-01-01",
+        "portfolio_value": 100000,
+        "confidence_level": 0.99
     }""")
     mocker.patch('builtins.open', valid_json_file)
     expected_keys = [
