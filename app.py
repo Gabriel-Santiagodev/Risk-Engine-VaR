@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from src.core.extractor import _data_extractor, _transform_data
-from src.core.quant_engine import calculate_portfolio_risk
+from src.core.quant_engine import run_quant_engine
 from src.utils.logger import setup_logging
 
 logger = setup_logging(__name__)
@@ -83,8 +83,9 @@ def main() -> None:
             min_value=date(2000, 1, 2),
             max_value=today
         )
-        if start_date >= end_date:
-            st.error("Start date must be before end date")
+        
+        if (end_date - start_date).days < 365:
+            st.error("Financial models require at least 1 year (365 days) of historical data to be statistically valid.")
             st.stop()
         
         st.subheader("2. Portfolio Parameters")
@@ -164,7 +165,7 @@ def main() -> None:
             "portfolio_value": portfolio_value,
             "confidence_level": confidence_level
         }
-        risk_results = calculate_portfolio_risk(web_config, market_data)
+        risk_results = run_quant_engine(web_config, market_data)
         st.write(risk_results)
 
 if __name__ == "__main__":

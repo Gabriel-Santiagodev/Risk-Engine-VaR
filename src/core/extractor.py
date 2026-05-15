@@ -2,11 +2,8 @@ from datetime import datetime
 
 import pandas as pd
 import requests
-from sqlalchemy import text
-from sqlalchemy.engine import Engine
 import yfinance as yf
 
-from src.utils.js_type import JsonConfig
 from src.utils.logger import setup_logging
 
 logger = setup_logging(__name__)
@@ -129,65 +126,6 @@ def _transform_data(df: pd.DataFrame) -> pd.DataFrame:
         'Adj Close': 'adj_close', 'Ticker': 'ticker'
     })
 
+    df['market_date'] = pd.to_datetime(df['market_date']).dt.date
+
     return df
-
-
-def _data_to_sql(df: pd.DataFrame, table_name: str, engine: Engine) -> None:
-    """Loads transformed historical market data to PostgreSQL.
-
-    Loads the transformed historical market data into a PostgreSQL table.
-
-    Args:
-        df (pd.DataFrame): Transformed historical market dataframe.
-        table_name (str): PostgreSQL table's name.
-        engine (Engine): Connection with PostgreSQL.
-
-    Returns:
-        None: This function returns nothing.
-
-    Raises:
-        Exception: If a database error occurs during the insertion process.
-
-    Examples:
-        >>> _data_to_sql(df, 'historical_market_data', engine)
-
-    """
-    try:
-        with engine.begin() as conn:
-            conn.execute(text(f"TRUNCATE TABLE {table_name}"))
-            df.to_sql(name=table_name, con=conn, if_exists='append', index=False)
-            logger.info(f"Data successfully saved to PostgreSQL in table '{table_name}'.")
-
-    except Exception:
-        logger.exception("Error trying to insert data into PostgreSQL.")
-        raise 
-
-
-def run_etl_pipeline(data: JsonConfig, engine: Engine) -> None:
-    """Executes the ETL pipeline.
-
-    Extracts historical data for specific tickers, transforms the data structure,
-    and loads it into the local PostgreSQL database.
-
-    Args:
-        data (JsonConfig): Json dictionary parameters.
-        engine (Engine): Connection with PostgreSQL.
-
-    Returns:
-        None: This function does not have returns.
-
-    Raises:
-        None: This function does not have raises.
-
-    """
-    logger.info("Starting ETL pipeline...")
-    tickers = data["tickers_list"]
-    table_name = data["table_name"]
-    start_date = data["start_date"]
-    end_date = data["end_date"]
-
-    df = _data_extractor(tickers, start_date, end_date)
-    df = _transform_data(df)
-    _data_to_sql(df, table_name, engine)
-
-    logger.info("ETL pipeline finished executing.")

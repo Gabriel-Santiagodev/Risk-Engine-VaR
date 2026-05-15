@@ -4,76 +4,10 @@ import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
 from scipy.stats import norm
-from sqlalchemy.engine import Engine
 
-from src.utils.js_type import JsonConfig
 from src.utils.logger import setup_logging
 
 logger = setup_logging(__name__)
-
-
-def _data_validation(df: pd.DataFrame) -> None:
-    """Validates the historical market data stored in a SQL database.
-
-    Validates if the historical market data is empty or not.
-
-    Args:
-        df (pd.DataFrame): Raw historical market data dataframe.
-
-    Returns:
-        None: This function returns nothing.
-
-    Raises:
-        ValueError: If the historical market data is empty.
-
-    Examples:
-        >>> _sql_validation(df)
-        ValueError: Dataframe selected is empty.
-
-    """
-    if df.empty:
-        logger.error("Database query returned an empty DataFrame. Cannot proceed with VaR calculations.")
-        raise ValueError("Dataframe selected is empty.")
-
-
-def _load_raw_dataframe(table_name: str, engine: Engine) -> pd.DataFrame:
-    """Executes a SQL query to load raw historical market data.
-
-    Executes a SQL query to extract the market_date, ticker, and adj_close columns.
-
-    Args:
-        table_name(str): PostgreSQL table's name.
-        engine(Engine): Connection with PostgreSQL.
-
-    Returns:
-        pd.DataFrame: Historical market data with the selected columns.
-
-    Raises:
-        Exception: If PostgreSQL's database is turned off, loses connection, or if query fails.
-        ValueError: Error Inherited from sql_validation function when the dataframe is empty.
-
-    Examples:
-        >>> _load_raw_dataframe(table_name, engine)
-            market_date ticker  adj_close
-        0     2020-01-02   AAPL    72.4005
-        1     2020-01-02  GOOGL    67.8730
-        2     2020-01-02   MSFT   152.1584
-
-    """
-    query = f"SELECT market_date, ticker, adj_close FROM {table_name}"
-
-    try:
-        df = pd.read_sql_query(
-            sql=query,
-            con=engine
-        )
-    except Exception as e:
-        logger.exception(f"Failed to execute SQL query on table '{table_name}': {e}")
-        raise 
-    
-    _data_validation(df)
-
-    return df
 
 
 def _build_portfolio_matrix(df: pd.DataFrame) -> pd.DataFrame:
@@ -161,13 +95,13 @@ def _variance_covariance_matrix(percentage_change_matrix: pd.DataFrame) -> pd.Da
     return percentage_change_matrix.cov() 
 
 
-def _weights_vector_extraction(data: JsonConfig, matrix_columns: pd.Index) -> list[int | float]:
+def _weights_vector_extraction(data: dict[str, Any], matrix_columns: pd.Index) -> list[int | float]:
     """Extracts weights vector values.
 
     Extracts from config.json the weights of each ticker in order to create a weights vector.
 
     Args:
-        data (JsonConfig): Json dictionary parameters.
+        data (dict[str, Any]): Dictionary parameters.
         matrix_columns (pd.Index): Pivoted historical market dataframe columns.
 
     Returns:
@@ -334,13 +268,13 @@ def _calculate_portfolio_mean(percentage_change_means: pd.Series, weight_array: 
     return percentage_change_means @ weight_array
 
 
-def _confidence_level_extraction(data: JsonConfig) -> float | int:
+def _confidence_level_extraction(data: dict[str, Any]) -> float | int:
     """Extracts confidence level.
 
     Extracts confidence level from config.json.
 
     Args:
-        data (JsonConfig): Json dictionary parameters.
+        data (dict[str, Any]): Dictionary parameters.
 
     Returns:
         float | int: Confidence level value.
@@ -402,13 +336,13 @@ def _parametric_var_calculator(z_score: float, portfolio_mean: float, portfolio_
     return portfolio_mean + (z_score * portfolio_vol)
 
 
-def _portfolio_value_extraction(data: JsonConfig) -> float | int:
+def _portfolio_value_extraction(data: dict[str, Any]) -> float | int:
     """Extracts portfolio value.
 
     Extracts portfolio value from config.json.
 
     Args:
-        data (JsonConfig): Json dictionary parameters.
+        data (dict[str, Any]): Dictionary parameters.
 
     Returns:
         float | int: Portfolio value.
@@ -448,14 +382,14 @@ def _var_money_calculator(var_value: float, portfolio_value: float | int) -> flo
     return var_value * portfolio_value * -1
 
 
-def calculate_portfolio_risk(data: JsonConfig, df: pd.DataFrame) -> dict[str, Any]:
+def run_quant_engine(data: dict[str, Any], df: pd.DataFrame) -> dict[str, Any]:
     """Calculates the portfolio risk metrics directly from a loaded DataFrame. 
 
     It computes the portfolio's variance-covariance matrix, and calculates
     the 1-day parametric Value at Risk (VaR) from a loaded cache dataframe.
 
     Args:
-        data (JsonConfig): Json dictionary parameters.
+        data (dict[str, Any]): Dictionary parameters.
         df (pd.DataFrame): Raw historical market data dataframe.
 
     Returns:
@@ -492,34 +426,3 @@ def calculate_portfolio_risk(data: JsonConfig, df: pd.DataFrame) -> dict[str, An
         "portfolio_vol": portfolio_vol,
         "portfolio_mean": portfolio_mean
     }
-
-
-def run_quant_engine(data: JsonConfig, engine: Engine) -> dict[str, Any]:
-    """Executes the quantitative risk pipeline. 
-
-    It extracts historical market data from PostgreSQL, and calculates the 1-day 
-    parametric Value at Risk (VaR) using the calculate_portfolio_risk function.
-
-    Args:
-        data (JsonConfig): Json dictionary parameters.
-        engine (Engine): Connection with PostgreSQL.
-
-    Returns:
-        dict[str, Any]: Dictionary with the following keys portfolio_percentages_changes, 
-        var_value, var_money, portfolio_value, confidence_level, portfolio_vol, portfolio_mean 
-        and their values.
-
-    Raises:
-        None: This function does not have raises.
-        
-    """
-    logger.info("Starting quantitative risk engine...")
-
-    table_name = data["table_name"]
-    df = _load_raw_dataframe(table_name, engine)
-    
-    risk_results = calculate_portfolio_risk(data, df)
-    var_money = risk_results["var_money"]
-    logger.info(f"VaR calculation successfully completed. 1-Day VaR: ${var_money:.2f}")
-
-    return risk_results

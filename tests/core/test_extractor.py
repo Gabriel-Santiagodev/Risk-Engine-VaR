@@ -5,10 +5,8 @@ import requests
 
 from src.core.extractor import (
     _data_extractor,
-    _data_to_sql,
     _date_validator,
     _transform_data,
-    run_etl_pipeline
 )
 
 
@@ -109,57 +107,3 @@ def test_transform_data_success_with_valid_dataframe():
     expected_dataframe.columns.names = 'Price'
 
     assert_frame_equal(_transform_data(valid_dataframe), expected_dataframe)
-
-
-def test_data_to_sql_success_with_data_load(mocker):
-    """Tests that data is successfully loaded to SQL without exceptions."""
-    fake_dataframe = pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})
-    fake_engine = mocker.MagicMock()
-
-    mock_to_sql = mocker.patch('pandas.DataFrame.to_sql')
-    _data_to_sql(fake_dataframe, "fake_table", fake_engine)
-
-    fake_engine.begin.assert_called_once()
-    mock_to_sql.assert_called_once()
-
-
-def test_data_to_sql_raises_with_database_error(mocker):
-    """Tests that an Exception is raised when the data cannot be inserted into PostgreSQL."""
-    fake_dataframe = pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})
-    fake_engine = mocker.MagicMock()
-
-    fake_engine.begin.side_effect = Exception("Error trying to insert data into PostgreSQL.")
-    with pytest.raises(Exception) as exc_info:
-        _data_to_sql(fake_dataframe, "fake_table", fake_engine)
-    assert "Error trying to insert data into PostgreSQL." in str(exc_info.value)
-
-
-def test_run_etl_pipeline_success_with_correct_orchestration(mocker):
-    """Tests that the orchestrator behavior is correct when it runs."""
-    fake_dictionary = {
-        "tickers_list": ["AAPL", "MSFT"],
-        "table_name": "fake_table",
-        "start_date": "2018-01-01",
-        "end_date": "2018-02-01",
-    }
-
-    fake_raw_dataframe = "fake_raw_df"
-    fake_transformed_dataframe = "fake_transformed_df"
-
-    fake_engine = mocker.MagicMock()
-
-    mock_extractor = mocker.patch(
-        'src.core.extractor._data_extractor', 
-        return_value=fake_raw_dataframe
-    )
-    mock_transform = mocker.patch(
-        'src.core.extractor._transform_data', 
-        return_value=fake_transformed_dataframe
-    )
-    mock_sql = mocker.patch('src.core.extractor._data_to_sql')
-
-    run_etl_pipeline(fake_dictionary, fake_engine)
-
-    mock_extractor.assert_called_once_with(["AAPL", "MSFT"], "2018-01-01", "2018-02-01")
-    mock_transform.assert_called_once_with(fake_raw_dataframe)
-    mock_sql.assert_called_once_with(fake_transformed_dataframe, "fake_table", fake_engine)

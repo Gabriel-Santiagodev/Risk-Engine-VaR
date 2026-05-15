@@ -7,8 +7,6 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
 from src.core.quant_engine import (
-    _data_validation,
-    _load_raw_dataframe,
     _build_portfolio_matrix,
     _calculate_percentage_change,
     _variance_covariance_matrix,
@@ -50,51 +48,6 @@ def fake_percentages_changes_dataframe():
     fake_percentages_changes_dataframe.index.name = 'market_date'
     fake_percentages_changes_dataframe.columns.name = 'ticker'
     return fake_percentages_changes_dataframe
-
-
-def test_data_validation_success_with_valid_dataframe():
-    """Tests that no exception is raised when the data is not empty."""
-    fake_dataframe = pd.DataFrame({
-        "id": [1, 2, 3],
-        "Name": ["Ana", "Luis", "María"],
-        "Age": [23, 30, 27],
-        "State": [True, False, True]
-    })
-
-    _data_validation(fake_dataframe)
-
-
-def test_data_validation_raises_with_invalid_dataframe():
-    """Tests that a ValueError is raised when the data is empty."""
-    fake_dataframe = pd.DataFrame()
-
-    with pytest.raises(ValueError) as exc_info:
-        _data_validation(fake_dataframe)
-    assert "Dataframe selected is empty." in str(exc_info.value)
-
-
-def test_load_raw_dataframe_success_with_valid_sql_query_execution(mocker):
-    """Tests that no exception is raised when the sql query execution is successful."""
-    mocker.patch('src.core.quant_engine.pd.read_sql_query', return_value=pd.DataFrame({"col": [1]}))
-    _load_raw_dataframe("fake_table_name", "fake_engine")
-
-
-def test_load_raw_dataframe_raises_with_invalid_sql_query_execution(mocker):
-    """Tests that an Exception is raised when the sql query execution failed."""
-    mocker.patch('src.core.quant_engine.pd.read_sql_query', side_effect=Exception("DB Connection Lost"))
-
-    with pytest.raises(Exception) as exc_info:
-        _load_raw_dataframe("fake_table_name", "fake_engine")
-    assert "DB Connection Lost" in str(exc_info.value)
-
-
-def test_load_raw_dataframe_raises_with_dataframe_empty(mocker):
-    """Tests that a ValueError is raised when the dataframe returned is empty."""
-    mocker.patch('src.core.quant_engine.pd.read_sql_query', return_value=pd.DataFrame())
-
-    with pytest.raises(ValueError) as exc_info:
-        _load_raw_dataframe("fake_table_name", "fake_engine")
-    assert "Dataframe selected is empty." in str(exc_info.value)
 
 
 def test_build_portfolio_matrix_success_with_valid_pivoted_data():
