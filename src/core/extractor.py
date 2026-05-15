@@ -41,7 +41,7 @@ def _date_validator(start_date: str, end_date: str) -> tuple[str, str]:
 def _data_extractor(tickers: list[str], start_date: str, end_date: str) -> pd.DataFrame:
     """Extracts raw historical market data from Yahoo Finance.
 
-    Extracts raw historical market data for the specified tickers tickers from Yahoo Finance 
+    Extracts raw historical market data for the specified tickers from Yahoo Finance 
     using a date range defined by start_date and end_date.
 
     Args:
@@ -101,7 +101,8 @@ def _data_extractor(tickers: list[str], start_date: str, end_date: str) -> pd.Da
 def _transform_data(df: pd.DataFrame) -> pd.DataFrame:
     """Transforms raw historical market data.
 
-    Transforms the columns' names, adds a ticker column, and resets indexes.
+    Pivots the raw historical market data changing from wide format to long format, 
+    change columns names, and resets indexes.
 
     Args:
         df (pd.DataFrame): Raw historical market dataframe returned by the _data_extractor function.

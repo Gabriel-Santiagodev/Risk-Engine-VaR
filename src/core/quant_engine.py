@@ -448,12 +448,57 @@ def _var_money_calculator(var_value: float, portfolio_value: float | int) -> flo
     return var_value * portfolio_value * -1
 
 
+def calculate_portfolio_risk(data: JsonConfig, df: pd.DataFrame) -> dict[str, Any]:
+    """Calculates the portfolio risk metrics directly from a loaded DataFrame. 
+
+    It computes the portfolio's variance-covariance matrix, and calculates
+    the 1-day parametric Value at Risk (VaR) from a loaded cache dataframe.
+
+    Args:
+        data (JsonConfig): Json dictionary parameters.
+        df (pd.DataFrame): Raw historical market data dataframe.
+
+    Returns:
+        dict[str, Any]: Dictionary with the following keys portfolio_percentages_changes, 
+        var_value, var_money, portfolio_value, confidence_level, portfolio_vol, portfolio_mean 
+        and their values.
+
+    Raises:
+        None: This function does not have raises.
+        
+    """
+    portfolio_matrix = _build_portfolio_matrix(df)
+    weights_vector = _weights_vector_extraction(data, portfolio_matrix.columns)
+    percentage_change_matrix = _calculate_percentage_change(portfolio_matrix)
+    var_cov_matrix = _variance_covariance_matrix(percentage_change_matrix)
+    weights_array = _vector_to_array(weights_vector)
+    portfolio_percentage_changes = _calculate_portfolio_percentage_changes(percentage_change_matrix, weights_array)
+    portfolio_var = _portfolio_variance(var_cov_matrix, weights_array)
+    portfolio_vol = _portfolio_volatility(portfolio_var)
+    percentage_change_means = _percentage_change_matrix_means(percentage_change_matrix)
+    portfolio_mean = _calculate_portfolio_mean(percentage_change_means, weights_array)
+    confidence_level = _confidence_level_extraction(data)
+    z_score = _z_score_calculator(confidence_level)
+    var_value = _parametric_var_calculator(z_score, portfolio_mean, portfolio_vol)
+    portfolio_value = _portfolio_value_extraction(data)
+    var_money = _var_money_calculator(var_value, portfolio_value)
+
+    return {
+        "portfolio_percentage_changes": portfolio_percentage_changes,
+        "var_value": var_value,
+        "var_money": var_money,
+        "portfolio_value": portfolio_value,
+        "confidence_level": confidence_level,
+        "portfolio_vol": portfolio_vol,
+        "portfolio_mean": portfolio_mean
+    }
+
+
 def run_quant_engine(data: JsonConfig, engine: Engine) -> dict[str, Any]:
     """Executes the quantitative risk pipeline. 
 
-    It extracts historical market data from
-    PostgreSQL, computes the portfolio's variance-covariance matrix, and calculates
-    the 1-day parametric Value at Risk (VaR).
+    It extracts historical market data from PostgreSQL, and calculates the 1-day 
+    parametric Value at Risk (VaR) using the calculate_portfolio_risk function.
 
     Args:
         data (JsonConfig): Json dictionary parameters.
@@ -472,30 +517,9 @@ def run_quant_engine(data: JsonConfig, engine: Engine) -> dict[str, Any]:
 
     table_name = data["table_name"]
     df = _load_raw_dataframe(table_name, engine)
-    portfolio_matrix = _build_portfolio_matrix(df)
-    weights_vector = _weights_vector_extraction(data, portfolio_matrix.columns)
-    percentage_change_matrix = _calculate_percentage_change(portfolio_matrix)
-    var_cov_matrix = _variance_covariance_matrix(percentage_change_matrix)
-    weights_array = _vector_to_array(weights_vector)
-    portfolio_percentage_changes = _calculate_portfolio_percentage_changes(percentage_change_matrix, weights_array)
-    portfolio_var = _portfolio_variance(var_cov_matrix, weights_array)
-    portfolio_vol = _portfolio_volatility(portfolio_var)
-    percentage_change_means = _percentage_change_matrix_means(percentage_change_matrix)
-    portfolio_mean = _calculate_portfolio_mean(percentage_change_means, weights_array)
-    confidence_level = _confidence_level_extraction(data)
-    z_score = _z_score_calculator(confidence_level)
-    var_value = _parametric_var_calculator(z_score, portfolio_mean, portfolio_vol)
-    portfolio_value = _portfolio_value_extraction(data)
-    var_money = _var_money_calculator(var_value, portfolio_value)
-
+    
+    risk_results = calculate_portfolio_risk(data, df)
+    var_money = risk_results["var_money"]
     logger.info(f"VaR calculation successfully completed. 1-Day VaR: ${var_money:.2f}")
 
-    return {
-        "portfolio_percentage_changes": portfolio_percentage_changes,
-        "var_value": var_value,
-        "var_money": var_money,
-        "portfolio_value": portfolio_value,
-        "confidence_level": confidence_level,
-        "portfolio_vol": portfolio_vol,
-        "portfolio_mean": portfolio_mean
-    }
+    return risk_results
