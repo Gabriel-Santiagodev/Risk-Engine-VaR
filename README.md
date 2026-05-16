@@ -1,6 +1,13 @@
 # 💸 Portfolio Value at Risk (VaR) Dashboard
 
-**Try it live:** [Value at Risk Dashboard](https://value-at-risk-dashboard.streamlit.app)
+**Try it live!** [Value at Risk Dashboard](https://value-at-risk-dashboard.streamlit.app)
+
+<img width="1897" height="911" alt="var_image_one" src="https://github.com/user-attachments/assets/2e8604ef-de42-4ad4-84fc-3d16a954eac6" />
+
+---
+
+<img width="1891" height="899" alt="var_image_two" src="https://github.com/user-attachments/assets/3db44706-553b-4307-b1fe-8940ca548486" />
+
 
 A straightforward, interactive web application built with Python and Streamlit to calculate the 1-Day Parametric Value at Risk (VaR) of a custom stock portfolio. 
 
