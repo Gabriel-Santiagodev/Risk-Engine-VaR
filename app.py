@@ -76,13 +76,15 @@ def main() -> None:
             "Start Date",
             value=one_year_ago,
             min_value=date(2000, 1, 1),
-            max_value=one_year_ago
+            max_value=one_year_ago,
+            format="YYYY/MM/DD"
         )
         end_date = st.date_input(
             "End Date",
             value=today,
             min_value=date(2000, 1, 2),
-            max_value=today
+            max_value=today,
+            format="YYYY/MM/DD"
         )
 
         if (end_date - start_date).days < 365:
