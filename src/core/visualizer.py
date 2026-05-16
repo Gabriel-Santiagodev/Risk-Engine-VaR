@@ -129,7 +129,7 @@ def plot_return_density_with_var(portfolio_percentage_changes: pd.Series, portfo
     # VaR Value Line.
     ax.axvline(
         var_value,
-        color="#FFE600",
+        color="#FF7300",
         linestyle='dashed',
         linewidth=1.8,
         label=f'VaR {confidence_level:.0%}'

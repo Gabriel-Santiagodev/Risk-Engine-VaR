@@ -61,7 +61,7 @@ def main() -> None:
         page_title="VaR dashboard", 
         page_icon="💸",
         layout="wide",
-        initial_sidebar_state="collapsed"
+        initial_sidebar_state="expanded"
     )
     st.title("Value at Risk Dashboard")
     with st.sidebar:
@@ -84,11 +84,11 @@ def main() -> None:
             min_value=date(2000, 1, 2),
             max_value=today
         )
-        
+
         if (end_date - start_date).days < 365:
             st.error("Financial models require at least 1 year (365 days) of historical data to be statistically valid.")
             st.stop()
-        
+
         st.subheader("2. Portfolio Parameters")
         portfolio_value = st.number_input(
             "Total Capital ($)", 
@@ -131,7 +131,7 @@ def main() -> None:
         if len(tickers_list) < 2:
             st.error("Please select at least 2 tickers for a diversified portfolio.")
             st.stop()
-        
+
         weights_list = []
         col1, col2 = st.columns(2)
         col1.text("Select Weights %")
@@ -157,7 +157,7 @@ def main() -> None:
             icon="📊",
             width="stretch"
         )
-    
+
     if pressed_button:
         with st.spinner("Downloading market data and computing risk matrices..."):
             market_data = fetch_market_data(tickers_list, str(start_date), str(end_date))
@@ -188,7 +188,11 @@ def main() -> None:
             value=f"{portfolio_mean * 100:.2f}%",
             border=True
         )
-        st.subheader(f"With a confidence level of :blue[{confidence_level}%] and a portfolio's size of :blue[\\${portfolio_value}] you will lose less than or equal than :blue[\\${var_money:,.2f}]")
+        st.subheader(
+            f"With a confidence level of :blue[{confidence_level * 100:.0f}%] "
+            f"and a portfolio size of :blue[${portfolio_value:,.2f}], "
+            f"your maximum expected loss for tomorrow is :orange[${var_money:,.2f}]."
+        )
         st.divider()
         portfolio_percentage_changes = risk_results["portfolio_percentage_changes"]
         var_value = risk_results["var_value"]
