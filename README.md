@@ -99,7 +99,23 @@ The engine calculates risk based on the parametric method (Variance-Covariance),
    ```
 
 5. **Run the test suite (Optional):**
-   *(Note: Ensure you have `pytest` installed in your dev environment)*
+   To run the tests, you need to install the testing dependencies first:
    ```bash
+   pip install pytest pytest-mock
    pytest tests
    ```
+
+
+> **Note:** This app is hosted on Streamlit Community Cloud.
+> If it appears asleep, click "Yes, get this app back up!" and wait a few seconds.
+
+
+## 👨‍💻 Author
+
+**Gabriel Santiago**
+* LinkedIn: www.linkedin.com/in/gabrielsantiagodev1
+* GitHub: [@Gabriel-Santiagodev](https://github.com/Gabriel-Santiagodev)
+
+## 📄 License
+
+This project is open-source and available under the **MIT License**. Feel free to copy, modify, and use it for your own educational or commercial purposes.
