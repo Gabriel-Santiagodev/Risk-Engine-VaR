@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 import pandas as pd
@@ -32,7 +33,7 @@ def test_generate_y_axis_success_with_valid_densities_array_generation():
     assert_array_almost_equal(expected_densities_array, expected_density_value, decimal=6)
 
 
-def test_return_density_with_var_with_successful_plot_render(mocker):
+def test_return_density_with_var_with_successful_plot_render():
     """Tests that no exception is raised when the plot is rendered."""
     fake_series = pd.Series([-0.5, 0.0, 0.5])
     fake_portfolio_mean = 0.0
@@ -40,8 +41,7 @@ def test_return_density_with_var_with_successful_plot_render(mocker):
     var_value = 0.04364060637425606
     confidence_level = 0.99
 
-    mock_show = mocker.patch('src.core.visualizer.plt.show')
+    result = plot_return_density_with_var(fake_series, fake_portfolio_mean, fake_portfolio_vol, var_value, confidence_level)
 
-    plot_return_density_with_var(fake_series, fake_portfolio_mean, fake_portfolio_vol, var_value, confidence_level)
-
-    mock_show.assert_called_once()
+    assert isinstance(result, plt.Figure)
+    plt.close('all')

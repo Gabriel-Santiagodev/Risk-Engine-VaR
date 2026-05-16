@@ -103,7 +103,7 @@ def test_transform_data_success_with_valid_dataframe():
     }
 
     expected_dataframe = pd.DataFrame(expected_dictionary)
-    expected_dataframe['market_date'] = pd.to_datetime(expected_dataframe['market_date'])
-    expected_dataframe.columns.names = 'Price'
+    expected_dataframe['market_date'] = pd.to_datetime(expected_dataframe['market_date']).dt.date
+    expected_dataframe.columns.name = 'Price'
 
     assert_frame_equal(_transform_data(valid_dataframe), expected_dataframe)

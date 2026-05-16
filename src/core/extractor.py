@@ -118,7 +118,7 @@ def _transform_data(df: pd.DataFrame) -> pd.DataFrame:
         2      2020-01-02   MSFT  152.158386   160.619995  160.729996  158.330002  158.779999   22622100
 
     """
-    df = df.stack()
+    df = df.stack(future_stack=True)
     df = df.reset_index()
     df = df.rename(columns={
         'Date': 'market_date', 'Close': 'close_price', 'High': 'high_price',

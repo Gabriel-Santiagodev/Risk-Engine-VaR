@@ -300,30 +300,37 @@ def test_portfolio_value_extraction_success_with_valid_portfolio_value_extractio
     assert _portfolio_value_extraction(fake_config) == 100000
 
 
-def test_run_quant_engine_success(mocker):
+def test_run_quant_engine_success():
     """Tests that no exception is raised when run_quant_engine runs."""
-    fake_config = {
-        "weight_tickers": {"GOOGL": 0.4, "AAPL": 0.6},
-        "table_name": "test_portfolio_table",
-        "start_date": "2020-01-02",
-        "end_date": "2020-01-06",
+    fake_dict = {
+        "weight_tickers": {"AAPL": 0.5, "GOOGL": 0.5},
         "portfolio_value": 100000,
         "confidence_level": 0.99
     }
 
-    fake_engine = Mock()
+    expected_dictionary = {
+        "market_date": {
+            0: "2020-01-02", 1: "2020-01-02", 
+            2: "2020-01-03", 3: "2020-01-03",
+            4: "2020-01-06", 5: "2020-01-06"
+        },
+        "ticker": {
+            0: "AAPL", 1: "GOOGL", 
+            2: "AAPL", 3: "GOOGL",
+            4: "AAPL", 5: "GOOGL"
+        },
+        "adj_close": {
+            0: 100.0, 1: 50.0, 
+            2: 102.0, 3: 49.0,
+            4: 101.0, 5: 51.0
+        }
+    }
 
-    mock_db_data = pd.DataFrame({
-        "market_date": ["2020-01-02", "2020-01-02", "2020-01-03", "2020-01-03", "2020-01-06", "2020-01-06"],
-        "ticker":      ["AAPL",       "GOOGL",      "AAPL",       "GOOGL",      "AAPL",       "GOOGL"],
-        "adj_close":   [100.0,        50.0,         101.0,        51.0,         99.0,         52.0]
-    })
-
-    mock_db_data['market_date'] = pd.to_datetime(mock_db_data['market_date'])
-
-    mocker.patch('src.core.quant_engine._load_raw_dataframe', return_value=mock_db_data)
+    fake_transformed_df = pd.DataFrame(expected_dictionary)
+    fake_transformed_df['market_date'] = pd.to_datetime(fake_transformed_df['market_date']).dt.date
+    fake_transformed_df.columns.name = 'Price'
     
-    result = run_quant_engine(fake_config, fake_engine)
+    result = run_quant_engine(fake_dict, fake_transformed_df)
 
     assert isinstance(result, dict) 
 
@@ -337,3 +344,33 @@ def test_run_quant_engine_success(mocker):
     assert result["confidence_level"] == 0.99
     assert result["portfolio_vol"] > 0 
     assert isinstance(result["var_money"], float)
+
+
+def test_run_quant_engine_raises_with_invalid_weights():
+    """Tests that a ValueError is raised when weights do not sum to 1.0."""
+    fake_dict_bad_weights = {
+        "weight_tickers": {"AAPL": 0.8, "GOOGL": 0.8},
+        "portfolio_value": 100000,
+        "confidence_level": 0.99
+    }
+    fake_df = pd.DataFrame() 
+
+    with pytest.raises(ValueError) as exc_info:
+        run_quant_engine(fake_dict_bad_weights, fake_df)
+    
+    assert "sum to 1.0" in str(exc_info.value)
+
+
+def test_run_quant_engine_raises_with_invalid_confidence_level():
+    """Tests that a ValueError is raised when confidence level is out of bounds."""
+    fake_dict_bad_confidence = {
+        "weight_tickers": {"AAPL": 0.5, "GOOGL": 0.5},
+        "portfolio_value": 100000,
+        "confidence_level": 1.50 
+    }
+    fake_df = pd.DataFrame() 
+
+    with pytest.raises(ValueError) as exc_info:
+        run_quant_engine(fake_dict_bad_confidence, fake_df)
+    
+    assert "strictly between 0 and 1" in str(exc_info.value)

@@ -4,6 +4,7 @@ import streamlit as st
 
 from src.core.extractor import _data_extractor, _transform_data
 from src.core.quant_engine import run_quant_engine
+from src.core.visualizer import plot_return_density_with_var
 from src.utils.logger import setup_logging
 
 logger = setup_logging(__name__)
@@ -122,7 +123,7 @@ def main() -> None:
         ]
 
         tickers_list = st.multiselect(
-            "Select Tickers" ,
+            "Select Tickers",
             options=popular_tickers,
             default=["GOOGL", "AAPL"],
             max_selections=5,
@@ -158,15 +159,49 @@ def main() -> None:
         )
     
     if pressed_button:
-        market_data = fetch_market_data(tickers_list, str(start_date), str(end_date))
-        weight_tickers_dict = {ticker: weight / 100 for ticker, weight in zip(tickers_list, weights_list)}
-        web_config = {
-            "weight_tickers": weight_tickers_dict,
-            "portfolio_value": portfolio_value,
-            "confidence_level": confidence_level
-        }
-        risk_results = run_quant_engine(web_config, market_data)
-        st.write(risk_results)
+        with st.spinner("Downloading market data and computing risk matrices..."):
+            market_data = fetch_market_data(tickers_list, str(start_date), str(end_date))
+            weight_tickers_dict = {ticker: weight / 100 for ticker, weight in zip(tickers_list, weights_list)}
+            web_config = {
+                "weight_tickers": weight_tickers_dict,
+                "portfolio_value": portfolio_value,
+                "confidence_level": confidence_level
+            }
+            risk_results = run_quant_engine(web_config, market_data)
+
+        var_money = risk_results["var_money"]
+        portfolio_vol = risk_results["portfolio_vol"]
+        portfolio_mean = risk_results["portfolio_mean"]
+        col1, col2, col3 = st.columns(3)
+        col1.metric(
+            "**1-Day Value at Risk (VaR)**",
+            value=f"${var_money:,.2f}",
+            border=True
+        )
+        col2.metric(
+            "**Portfolio Volatility (Daily)**",
+            value=f"{portfolio_vol * 100:.2f}%",
+            border=True
+        )
+        col3.metric(
+            "**Expected Return (Daily)**",
+            value=f"{portfolio_mean * 100:.2f}%",
+            border=True
+        )
+        st.subheader(f"With a confidence level of :blue[{confidence_level}%] and a portfolio's size of :blue[\\${portfolio_value}] you will lose less than or equal than :blue[\\${var_money:,.2f}]")
+        st.divider()
+        portfolio_percentage_changes = risk_results["portfolio_percentage_changes"]
+        var_value = risk_results["var_value"]
+        confidence_level = risk_results["confidence_level"]
+        fig = plot_return_density_with_var(portfolio_percentage_changes, portfolio_mean, portfolio_vol, var_value, confidence_level)
+        st.pyplot(fig)
+
+    else:
+        st.info(
+            "Configure your portfolio in the sidebar and click **Calculate Value at Risk** to begin.", 
+            icon="💼", 
+            width=600
+        )
 
 if __name__ == "__main__":
     main()

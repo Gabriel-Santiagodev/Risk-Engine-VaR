@@ -393,14 +393,28 @@ def run_quant_engine(data: dict[str, Any], df: pd.DataFrame) -> dict[str, Any]:
         df (pd.DataFrame): Raw historical market data dataframe.
 
     Returns:
-        dict[str, Any]: Dictionary with the following keys portfolio_percentages_changes, 
+        dict[str, Any]: Dictionary with the following keys portfolio_percentage_changes, 
         var_value, var_money, portfolio_value, confidence_level, portfolio_vol, portfolio_mean 
         and their values.
 
     Raises:
-        None: This function does not have raises.
+        ValueError: If the sum of the portfolio weights is not equal to 1.0.
+        ValueError: If portfolio variance is zero or negative.
+        ValueError: If confidence level is not between 0 and 1.
         
     """
+    logger.info("Starting quantitative risk engine...")
+
+    weights_sum = sum(data["weight_tickers"].values())
+    if not np.isclose(weights_sum, 1.0):
+        logger.error(f"Portfolio weights must sum to 1.0. Current sum: {weights_sum}")
+        raise ValueError("Portfolio weights must sum to 1.0.")
+
+    confidence_level = _confidence_level_extraction(data)
+    if not (0.0 < confidence_level < 1.0):
+        logger.error(f"Confidence level {confidence_level} invalid. Must be strictly between 0 and 1.")
+        raise ValueError("Confidence level invalid. Must be strictly between 0 and 1.")
+    
     portfolio_matrix = _build_portfolio_matrix(df)
     weights_vector = _weights_vector_extraction(data, portfolio_matrix.columns)
     percentage_change_matrix = _calculate_percentage_change(portfolio_matrix)
@@ -411,7 +425,6 @@ def run_quant_engine(data: dict[str, Any], df: pd.DataFrame) -> dict[str, Any]:
     portfolio_vol = _portfolio_volatility(portfolio_var)
     percentage_change_means = _percentage_change_matrix_means(percentage_change_matrix)
     portfolio_mean = _calculate_portfolio_mean(percentage_change_means, weights_array)
-    confidence_level = _confidence_level_extraction(data)
     z_score = _z_score_calculator(confidence_level)
     var_value = _parametric_var_calculator(z_score, portfolio_mean, portfolio_vol)
     portfolio_value = _portfolio_value_extraction(data)

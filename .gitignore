@@ -3,7 +3,6 @@ __pycache__/
 *.py[cod]
 
 # --- Logs --- 
-*.log 
 logs/
 
 # --- User Configuration & OS Files ---
