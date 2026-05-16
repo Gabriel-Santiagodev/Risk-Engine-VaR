@@ -12,7 +12,7 @@ logger = setup_logging(__name__)
 
 @st.cache_data(show_spinner=False)
 def fetch_market_data(tickers: list[str], start_date: str, end_date: str) -> pd.DataFrame:
-    """Extracts raw market data from Yahoo Finance to storage it into the cache memory.
+    """Extracts raw market data from Yahoo Finance to store it in cache memory.
 
     Extracts, transforms, and caches historical market data for the specified tickers and dates.
 
@@ -101,7 +101,7 @@ def main() -> None:
         confidence_level = st.selectbox("Confidence Level", options=[0.95, 0.99])
 
         st.subheader("3. Tickers & Weights")
-        popular_tickers =[
+        popular_tickers = [
             "AAPL",   
             "MSFT",  
             "GOOGL",  

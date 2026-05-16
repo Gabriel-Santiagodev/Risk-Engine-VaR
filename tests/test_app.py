@@ -1,12 +1,12 @@
+import unittest.mock as mock
+
 import pandas as pd
 from pandas.testing import assert_frame_equal
-import streamlit as st
-import unittest.mock as mock
 
 from app import fetch_market_data
 
 def test_fetch_market_data_success(mocker):
-    """Tests that no exception is raised when the fetch_market_data warps extraction and transformation functions."""
+    """Tests that no exception is raised when the fetch_market_data wraps extraction and transformation functions."""
     mock.patch("streamlit.cache_data", lambda f: f).start()
 
     fake_dict = {
