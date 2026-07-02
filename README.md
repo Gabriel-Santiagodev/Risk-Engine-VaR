@@ -1,4 +1,4 @@
-# 💸 Portfolio Value at Risk (VaR) Dashboard
+# Portfolio Value at Risk (VaR) Dashboard
 
 **Try it live!** [Value at Risk Dashboard](https://value-at-risk-dashboard.streamlit.app)
 
@@ -13,7 +13,7 @@ A straightforward, interactive web application built with Python and Streamlit t
 
 The project extracts historical market data, computes the portfolio's variance-covariance matrix, and visualizes the risk using a normal distribution curve. It was built with a focus on clean code, separation of concerns, and stateless architecture.
 
-## 🏗️ Architecture & Design
+## Architecture & Design
 
 This application runs entirely in memory (Stateless Architecture) to ensure fast calculations and a smooth user experience. 
 
@@ -22,7 +22,7 @@ This application runs entirely in memory (Stateless Architecture) to ensure fast
 * **Caching (`@st.cache_data`):** Repeated queries with the same dates and tickers are cached in RAM. This minimizes API calls and allows the user to tweak confidence levels or portfolio capital instantly.
 * **Defensive Programming:** Both the Streamlit UI and the backend Quantitative Engine validate inputs independently (e.g., ensuring portfolio weights sum exactly to 1.0).
 
-## 🧮 Mathematical Approach
+## Mathematical Approach
 
 The engine calculates risk based on the parametric method (Variance-Covariance), using linear algebra to account for asset correlation:
 
@@ -32,14 +32,14 @@ The engine calculates risk based on the parametric method (Variance-Covariance),
    $$\sigma_p^2 = w^T \cdot \Sigma \cdot w$$
 4. **VaR Calculation:** Uses SciPy to find the Z-score based on the selected confidence level (e.g., 95% or 99%), combining it with the portfolio's mean return and volatility.
 
-## ✨ Key Features
+## Key Features
 
 * **Dynamic UI:** Users can select multiple tickers, assign custom weights, and set historical time horizons.
 * **Data Visualization:** Uses Matplotlib to render an empirical density histogram overlaid with a theoretical normal distribution (Gaussian Bell) and the VaR threshold.
 * **Automated Testing:** The core logic is covered by unit tests using `pytest` and mocked API responses to ensure mathematical accuracy and correct exception handling.
 * **PEP 8 Compliance:** Code is cleanly formatted and documented with explicit type hints and docstrings.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Frontend:** Streamlit
 * **Data Extraction:** yfinance, Requests
@@ -47,7 +47,7 @@ The engine calculates risk based on the parametric method (Variance-Covariance),
 * **Visualization:** Matplotlib
 * **Testing:** Pytest, pytest-mock
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 ├── .streamlit/
@@ -71,7 +71,7 @@ The engine calculates risk based on the parametric method (Variance-Covariance),
 └── requirements.txt        # Production dependencies
 ```
 
-## 🚀 How to Run Locally
+## How to Run Locally
 
 1. **Clone the repository:**
    ```bash
@@ -110,12 +110,12 @@ The engine calculates risk based on the parametric method (Variance-Covariance),
 > If it appears asleep, click "Yes, get this app back up!" and wait a few seconds.
 
 
-## 👨‍💻 Author
+## Author
 
 **Gabriel Santiago**
 * LinkedIn: www.linkedin.com/in/gabrielsantiagodev1
 * GitHub: [@Gabriel-Santiagodev](https://github.com/Gabriel-Santiagodev)
 
-## 📄 License
+## License
 
 This project is open-source and available under the **MIT License**. Feel free to copy, modify, and use it for your own educational or commercial purposes.
